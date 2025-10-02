@@ -61,7 +61,7 @@ $role = $currentUser['role'] ?? '';
 switch ($role) {
     case 'admin':
     case 'super_admin':
-        header('Location: admin/dashboard_working.php');
+        header('Location: admin/dashboard_absolute.php');
         break;
     case 'student':
         header('Location: student/dashboard.php');

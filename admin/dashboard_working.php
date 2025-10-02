@@ -18,18 +18,21 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'super_admin'])) {
     exit;
 }
 
+// Get absolute path to root directory
+$rootPath = dirname(__DIR__);
+
 // Load database
-require_once '../config/database.php';
+require_once $rootPath . '/config/database.php';
 $database = new Database();
 $pdo = $database->getConnection();
 
 // Load models
-require_once '../models/User.php';
-require_once '../models/Student.php';
-require_once '../models/Application.php';
-require_once '../models/Program.php';
-require_once '../models/Payment.php';
-require_once '../models/Report.php';
+require_once $rootPath . '/models/User.php';
+require_once $rootPath . '/models/Student.php';
+require_once $rootPath . '/models/Application.php';
+require_once $rootPath . '/models/Program.php';
+require_once $rootPath . '/models/Payment.php';
+require_once $rootPath . '/models/Report.php';
 
 $userModel = new User($pdo);
 $studentModel = new Student($pdo);
