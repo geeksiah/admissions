@@ -1,14 +1,23 @@
 <?php
-require_once 'config/config.php';
-require_once 'config/database.php';
+// Note: Config and database should already be loaded by the calling file
+// This header is included by dashboard files, not directly accessed
 
-// Initialize database and security
-$database = new Database();
-$security = new Security($database);
+// Only initialize if not already done
+if (!isset($database)) {
+    require_once 'config/config.php';
+    require_once 'config/database.php';
+    $database = new Database();
+}
 
-// Check if user is logged in
-if (!isLoggedIn()) {
-    redirect('/login.php');
+// Only load security if needed and not already loaded
+if (!isset($security) && class_exists('Security')) {
+    $security = new Security($database);
+}
+
+// Check if user is logged in (if session functions are available)
+if (function_exists('isLoggedIn') && !isLoggedIn()) {
+    header('Location: ../login.php');
+    exit;
 }
 
 $currentUser = [
