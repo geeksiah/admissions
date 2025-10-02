@@ -62,6 +62,12 @@ define('BACKUP_COMPRESSION_ENABLED', true);
 define('RECORDS_PER_PAGE', 20);
 define('MAX_PAGINATION_LINKS', 10);
 
+// Database Constants (for backward compatibility)
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'admissions_management');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+
 // Date and Time Settings
 define('DATE_FORMAT', 'Y-m-d');
 define('DATETIME_FORMAT', 'Y-m-d H:i:s');

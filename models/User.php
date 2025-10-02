@@ -218,7 +218,7 @@ class User {
                 $params[] = $excludeId;
             }
             
-            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $result = $stmt->fetch();
             
@@ -242,7 +242,7 @@ class User {
                 $params[] = $excludeId;
             }
             
-            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $result = $stmt->fetch();
             

@@ -17,14 +17,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
     exit;
 }
 
-$security = new Security();
-$userModel = new User();
-$studentModel = new Student();
-$applicationModel = new Application();
+$database = new Database();
+$pdo = $database->getConnection();
+
+$security = new Security($database);
+$userModel = new User($pdo);
+$studentModel = new Student($pdo);
+$applicationModel = new Application($pdo);
 
 // Get current user data
 $currentUser = $userModel->getById($_SESSION['user_id']);
-$student = $studentModel->getByUserId($_SESSION['user_id']);
+$student = $studentModel->getByEmail($currentUser['email'] ?? '') ?: [];
 
 if (!$student) {
     header('Location: ../unauthorized.php');
@@ -32,7 +35,7 @@ if (!$student) {
 }
 
 // Get student's applications
-$applications = $applicationModel->getByStudentId($student['id']);
+$applications = !empty($student['id']) ? $applicationModel->getByStudent($student['id']) : [];
 
 // Get application statistics
 $stats = [
@@ -58,7 +61,7 @@ include '../includes/header.php';
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3 mb-0">Welcome back, <?php echo htmlspecialchars($currentUser['full_name']); ?>!</h1>
+                    <h1 class="h3 mb-0">Welcome back, <?php echo htmlspecialchars(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? '')); ?>!</h1>
                     <p class="text-muted">Here's an overview of your applications</p>
                 </div>
                 <div>

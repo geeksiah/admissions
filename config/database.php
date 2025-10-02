@@ -20,9 +20,9 @@
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'admissions_management';
-    private $username = 'root';
-    private $password = '';
+    private $db_name = 'u279576488_admissions';
+    private $username = 'u279576488_lapaz';
+    private $password = '7uVV;OEX|';
     private $charset = 'utf8mb4';
     private $pdo;
     

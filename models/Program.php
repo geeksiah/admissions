@@ -35,7 +35,7 @@ class Program {
         try {
             $stmt = $this->database->prepare("
                 SELECT * FROM programs 
-                WHERE is_active = 1 
+                WHERE status = 'active' 
                 ORDER BY program_name
             ");
             $stmt->execute();
@@ -98,7 +98,7 @@ class Program {
                 WHERE 1=1";
         
         if ($activeOnly) {
-            $sql .= " AND p.is_active = 1";
+            $sql .= " AND p.status = 'active'";
         }
         
         $sql .= " GROUP BY p.id ORDER BY p.program_name";
@@ -168,7 +168,7 @@ class Program {
      */
     public function getByLevel($levelName) {
         $sql = "SELECT * FROM programs 
-                WHERE level_name = ? AND is_active = 1 
+                WHERE degree_level = ? AND status = 'active' 
                 ORDER BY program_name";
         
         $stmt = $this->database->prepare($sql);
@@ -181,7 +181,7 @@ class Program {
      */
     public function getByDepartment($department) {
         $sql = "SELECT * FROM programs 
-                WHERE department = ? AND is_active = 1 
+                WHERE department = ? AND status = 'active' 
                 ORDER BY program_name";
         
         $stmt = $this->database->prepare($sql);
@@ -194,13 +194,13 @@ class Program {
      */
     public function search($query, $level = null, $department = null) {
         $sql = "SELECT * FROM programs 
-                WHERE is_active = 1 
+                WHERE status = 'active' 
                 AND (program_name LIKE ? OR program_code LIKE ? OR description LIKE ?)";
         
         $params = ["%$query%", "%$query%", "%$query%"];
         
         if ($level) {
-            $sql .= " AND level_name = ?";
+            $sql .= " AND degree_level = ?";
             $params[] = $level;
         }
         
@@ -297,7 +297,7 @@ class Program {
      * Get program levels
      */
     public function getLevels() {
-        $sql = "SELECT DISTINCT level_name FROM programs WHERE is_active = 1 ORDER BY level_name";
+        $sql = "SELECT DISTINCT degree_level FROM programs WHERE status = 'active' ORDER BY degree_level";
         $stmt = $this->database->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -307,7 +307,7 @@ class Program {
      * Get departments
      */
     public function getDepartments() {
-        $sql = "SELECT DISTINCT department FROM programs WHERE is_active = 1 AND department IS NOT NULL ORDER BY department";
+        $sql = "SELECT DISTINCT department FROM programs WHERE status = 'active' AND department IS NOT NULL ORDER BY department";
         $stmt = $this->database->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);

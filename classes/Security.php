@@ -74,6 +74,7 @@ class Security {
                 $_SESSION['first_name'] = $user['first_name'];
                 $_SESSION['last_name'] = $user['last_name'];
                 $_SESSION['user_role'] = $user['role'];
+                $_SESSION['role'] = $user['role']; // For backward compatibility
                 $_SESSION['logged_in'] = true;
                 
                 return true;
