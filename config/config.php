@@ -21,8 +21,8 @@
 // Application Settings
 define('APP_NAME', 'Admissions Management System');
 define('APP_VERSION', '1.0.0');
-define('APP_URL', 'http://localhost/admissions-management');
-define('APP_DEBUG', false);
+define('APP_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']));
+define('APP_DEBUG', true); // Enable for debugging production issues
 
 // Security Settings
 define('SESSION_NAME', 'ADMISSIONS_SESSION');
