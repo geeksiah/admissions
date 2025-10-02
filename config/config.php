@@ -85,13 +85,15 @@ if (APP_DEBUG) {
 // Timezone
 date_default_timezone_set(TIMEZONE);
 
-// Session Configuration
-ini_set('session.name', SESSION_NAME);
-ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
-ini_set('session.cookie_lifetime', SESSION_LIFETIME);
-ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
-ini_set('session.cookie_httponly', true);
-ini_set('session.use_strict_mode', true);
+// Session Configuration - Only set if session not already started
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.name', SESSION_NAME);
+    ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+    ini_set('session.cookie_lifetime', SESSION_LIFETIME);
+    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
+    ini_set('session.cookie_httponly', true);
+    ini_set('session.use_strict_mode', true);
+}
 
 // Security Headers
 function setSecurityHeaders() {

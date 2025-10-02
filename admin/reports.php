@@ -195,7 +195,7 @@ include '../includes/header.php';
                     <div class="col-md-3">
                         <div class="card bg-primary text-white">
                             <div class="card-body text-center">
-                                <h3><?php echo number_format($reportData['total_applications']); ?></h3>
+                                <h3><?php echo number_format($reportData['total_applications'] ?? 0); ?></h3>
                                 <p class="mb-0">Total Applications</p>
                             </div>
                         </div>
@@ -203,7 +203,7 @@ include '../includes/header.php';
                     <div class="col-md-3">
                         <div class="card bg-success text-white">
                             <div class="card-body text-center">
-                                <h3><?php echo number_format($reportData['approved_applications']); ?></h3>
+                                <h3><?php echo number_format($reportData['approved_applications'] ?? 0); ?></h3>
                                 <p class="mb-0">Approved</p>
                             </div>
                         </div>
@@ -211,7 +211,7 @@ include '../includes/header.php';
                     <div class="col-md-3">
                         <div class="card bg-danger text-white">
                             <div class="card-body text-center">
-                                <h3><?php echo number_format($reportData['rejected_applications']); ?></h3>
+                                <h3><?php echo number_format($reportData['rejected_applications'] ?? 0); ?></h3>
                                 <p class="mb-0">Rejected</p>
                             </div>
                         </div>
@@ -219,7 +219,7 @@ include '../includes/header.php';
                     <div class="col-md-3">
                         <div class="card bg-info text-white">
                             <div class="card-body text-center">
-                                <h3><?php echo number_format($reportData['approval_rate'], 1); ?>%</h3>
+                                <h3><?php echo number_format($reportData['approval_rate'] ?? 0, 1); ?>%</h3>
                                 <p class="mb-0">Approval Rate</p>
                             </div>
                         </div>
@@ -238,28 +238,28 @@ include '../includes/header.php';
                         <tbody>
                             <tr>
                                 <td>Submitted</td>
-                                <td><?php echo number_format($reportData['submitted_applications']); ?></td>
-                                <td><?php echo number_format(($reportData['submitted_applications'] / $reportData['total_applications']) * 100, 1); ?>%</td>
+                                <td><?php echo number_format($reportData['submitted_applications'] ?? 0); ?></td>
+                                <td><?php echo $reportData['total_applications'] > 0 ? number_format((($reportData['submitted_applications'] ?? 0) / $reportData['total_applications']) * 100, 1) : '0.0'; ?>%</td>
                             </tr>
                             <tr>
                                 <td>Under Review</td>
-                                <td><?php echo number_format($reportData['under_review_applications']); ?></td>
-                                <td><?php echo number_format(($reportData['under_review_applications'] / $reportData['total_applications']) * 100, 1); ?>%</td>
+                                <td><?php echo number_format($reportData['under_review_applications'] ?? 0); ?></td>
+                                <td><?php echo $reportData['total_applications'] > 0 ? number_format((($reportData['under_review_applications'] ?? 0) / $reportData['total_applications']) * 100, 1) : '0.0'; ?>%</td>
                             </tr>
                             <tr>
                                 <td>Approved</td>
-                                <td><?php echo number_format($reportData['approved_applications']); ?></td>
-                                <td><?php echo number_format(($reportData['approved_applications'] / $reportData['total_applications']) * 100, 1); ?>%</td>
+                                <td><?php echo number_format($reportData['approved_applications'] ?? 0); ?></td>
+                                <td><?php echo $reportData['total_applications'] > 0 ? number_format((($reportData['approved_applications'] ?? 0) / $reportData['total_applications']) * 100, 1) : '0.0'; ?>%</td>
                             </tr>
                             <tr>
                                 <td>Rejected</td>
-                                <td><?php echo number_format($reportData['rejected_applications']); ?></td>
-                                <td><?php echo number_format(($reportData['rejected_applications'] / $reportData['total_applications']) * 100, 1); ?>%</td>
+                                <td><?php echo number_format($reportData['rejected_applications'] ?? 0); ?></td>
+                                <td><?php echo $reportData['total_applications'] > 0 ? number_format((($reportData['rejected_applications'] ?? 0) / $reportData['total_applications']) * 100, 1) : '0.0'; ?>%</td>
                             </tr>
                             <tr>
                                 <td>Waitlisted</td>
-                                <td><?php echo number_format($reportData['waitlisted_applications']); ?></td>
-                                <td><?php echo number_format(($reportData['waitlisted_applications'] / $reportData['total_applications']) * 100, 1); ?>%</td>
+                                <td><?php echo number_format($reportData['waitlisted_applications'] ?? 0); ?></td>
+                                <td><?php echo $reportData['total_applications'] > 0 ? number_format((($reportData['waitlisted_applications'] ?? 0) / $reportData['total_applications']) * 100, 1) : '0.0'; ?>%</td>
                             </tr>
                         </tbody>
                     </table>

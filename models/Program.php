@@ -53,7 +53,7 @@ class Program {
         $sql = "INSERT INTO programs (
             program_name, program_code, level_name, department, 
             description, requirements, duration, credits, 
-            application_fee, is_active, created_by, created_at
+            application_fee, status, created_by, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
         
         $stmt = $this->database->prepare($sql);
@@ -67,7 +67,7 @@ class Program {
             $data['duration'],
             $data['credits'],
             $data['application_fee'],
-            $data['is_active'] ?? 1,
+            $data['status'] ?? 'active',
             $data['created_by']
         ]);
     }
@@ -125,7 +125,7 @@ class Program {
                     program_name = ?, program_code = ?, level_name = ?, 
                     department = ?, description = ?, requirements = ?, 
                     duration = ?, credits = ?, application_fee = ?, 
-                    is_active = ?, updated_at = NOW()
+                    status = ?, updated_at = NOW()
                 WHERE id = ?";
         
         $stmt = $this->database->prepare($sql);
@@ -139,7 +139,7 @@ class Program {
             $data['duration'],
             $data['credits'],
             $data['application_fee'],
-            $data['is_active'] ?? 1,
+            $data['status'] ?? 'active',
             $id
         ]);
     }
@@ -251,7 +251,7 @@ class Program {
         $sql = "SELECT p.*, COUNT(a.id) as application_count
                 FROM programs p
                 LEFT JOIN applications a ON p.id = a.program_id
-                WHERE p.is_active = 1
+                WHERE p.status = 'active'
                 GROUP BY p.id
                 ORDER BY application_count DESC
                 LIMIT ?";
@@ -317,7 +317,7 @@ class Program {
      * Toggle program status
      */
     public function toggleStatus($id) {
-        $sql = "UPDATE programs SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?";
+        $sql = "UPDATE programs SET status = CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END, updated_at = NOW() WHERE id = ?";
         $stmt = $this->database->prepare($sql);
         return $stmt->execute([$id]);
     }
