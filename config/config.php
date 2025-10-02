@@ -102,13 +102,14 @@ function setSecurityHeaders() {
     header('Content-Security-Policy: default-src \'self\'; script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: https:; font-src \'self\';');
 }
 
-// Autoloader
+// Autoloader with absolute paths
 spl_autoload_register(function ($class) {
+    $rootPath = dirname(__DIR__);
     $directories = [
-        __DIR__ . '/../classes/',
-        __DIR__ . '/../models/',
-        __DIR__ . '/../controllers/',
-        __DIR__ . '/../helpers/'
+        $rootPath . '/classes/',
+        $rootPath . '/models/',
+        $rootPath . '/controllers/',
+        $rootPath . '/helpers/'
     ];
     
     foreach ($directories as $directory) {
@@ -137,7 +138,14 @@ function validateCSRFToken($token) {
 }
 
 function redirect($url) {
-    header('Location: ' . $url);
+    // Handle both relative and absolute URLs
+    if (strpos($url, '/') === 0) {
+        // Absolute URL
+        header('Location: ' . $url);
+    } else {
+        // Relative URL - make it relative to current directory
+        header('Location: ' . $url);
+    }
     exit();
 }
 
@@ -147,7 +155,7 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        redirect('/login.php');
+        redirect('login.php');
     }
 }
 
@@ -156,7 +164,7 @@ function hasRole($requiredRoles) {
         return false;
     }
     
-    $userRole = $_SESSION['user_role'] ?? '';
+    $userRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? '';
     $roles = is_array($requiredRoles) ? $requiredRoles : [$requiredRoles];
     
     return in_array($userRole, $roles);
@@ -164,7 +172,7 @@ function hasRole($requiredRoles) {
 
 function requireRole($requiredRoles) {
     if (!hasRole($requiredRoles)) {
-        redirect('/unauthorized.php');
+        redirect('unauthorized.php');
     }
 }
 
