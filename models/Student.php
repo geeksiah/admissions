@@ -369,4 +369,24 @@ class Student {
             return false;
         }
     }
+    
+    /**
+     * Get recent students
+     */
+    public function getRecent($limit = 10) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT s.*, u.username, u.status as user_status, 'active' as status
+                FROM students s
+                LEFT JOIN users u ON s.user_id = u.id
+                ORDER BY s.created_at DESC
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            return $stmt->fetchAll();
+        } catch (Exception $e) {
+            error_log("Get recent students error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
