@@ -69,16 +69,22 @@
 # URL Rewriting Rules
 RewriteEngine On
 
-# Admin routes
+# Admin routes - only rewrite if file doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
 
-# Student routes
+# Student routes - only rewrite if file doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^student/([^/]+)/([^/]+)/?$ student/$1.php?action=$2 [L,QSA]
 
-# API routes
+# API routes - only rewrite if file doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api/([^/]+)/?$ api/$1.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api/([^/]+)/([^/]+)/?$ api/$1.php?action=$2 [L,QSA]
 
 # Special routes
