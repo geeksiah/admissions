@@ -1,0 +1,956 @@
+COMPREHENSIVE ADMISSIONS MANAGEMENT SYSTEM - TECHNICAL SPECIFICATION
+(cPanel/Shared Hosting Optimized)
+EXECUTIVE SUMMARY
+A standalone, enterprise-grade admissions management system designed for African educational institutions (Basic to Tertiary). Built with PHP 8.1+, MySQL 5.7+, and modern frontend frameworks. Optimized for standard cPanel/shared hosting environments while maintaining modularity for seamless integration of additional school management modules.
+________________________________________
+SYSTEM ARCHITECTURE
+Technology Stack (Shared Hosting Compatible)
+•	Backend: PHP 8.1+ (Pure PHP or lightweight framework like CodeIgniter 4 / Slim Framework)
+•	Database: MySQL 5.7+ / MariaDB 10.3+ with InnoDB engine
+•	Frontend: Vue.js 3 CDN / Alpine.js + Tailwind CSS (no build process required)
+•	Authentication: JWT tokens with PHP sessions fallback
+•	API Architecture: RESTful API design for future mobile app integration
+•	File Storage: Local file system (compatible with cPanel File Manager)
+•	Background Jobs: Cron jobs via cPanel (no Redis/queue workers required)
+•	Email: PHPMailer with SMTP support (works with cPanel email accounts)
+Why This Stack Works on Shared Hosting
+•	No Composer Required in Production: All dependencies bundled
+•	No Node.js/NPM Required: Frontend assets pre-compiled
+•	No Command Line Access Needed: All setup via web installer
+•	No Root Access Required: Pure PHP implementation
+•	Standard Apache .htaccess: Works out of the box
+•	Minimal PHP Extensions: Only standard cPanel extensions (mysqli, gd, mbstring, curl, zip)
+•	Low Memory Footprint: Runs comfortably on 128MB PHP memory limit
+•	File-Based Caching: No Redis/Memcached required
+Security Framework
+•	Session-based authentication with remember-me tokens
+•	Role-Based Access Control (RBAC) with granular permissions
+•	CSRF protection on all forms (session tokens)
+•	SQL injection prevention (MySQLi prepared statements)
+•	XSS protection with input sanitization
+•	Rate limiting using file-based storage
+•	Password hashing (bcrypt/argon2)
+•	Encrypted database fields for sensitive data (OpenSSL)
+•	Audit logging for all critical operations
+•	Two-Factor Authentication (2FA) via email/SMS
+•	IP-based access restrictions
+•	Automatic session timeout
+________________________________________
+CORE MODULES SPECIFICATION
+MODULE 1: APPLICANT PORTAL (Public-Facing)
+1.1 Application Management
+Features:
+•	Multi-step application form with progress indicator
+•	Dynamic form fields based on: 
+o	Educational level (Basic, Secondary, Tertiary)
+o	Program type (Day, Boarding, Distance Learning)
+o	Student category (Fresh, Transfer, International)
+•	Auto-save draft functionality (browser localStorage with periodic server sync)
+•	Document upload system: 
+o	Birth certificate (PDF/JPG, max 2MB)
+o	Academic transcripts/results (PDF/JPG, max 5MB)
+o	Passport photographs (JPG/PNG, 200KB, with auto-resize)
+o	Recommendation letters (PDF, max 2MB)
+o	Medical certificates (PDF/JPG, max 2MB)
+o	Previous school transfer certificates (PDF/JPG, max 2MB)
+•	Optimized file upload (chunked uploads for large files)
+•	Real-time form validation with helpful error messages
+•	Multiple application submission (for different programs)
+•	Application preview before final submission
+•	Digital signature capture (canvas-based, no external libraries)
+•	Print-friendly application summary
+1.2 Applicant Dashboard
+Features:
+•	Application status tracking with timeline visualization
+•	Notification center (email, SMS, in-app badge)
+•	Document management: 
+o	Upload additional documents
+o	Replace rejected documents
+o	Download submitted documents (server-generated PDFs)
+•	Payment status and history
+•	Admission decision notification
+•	Accept/Decline admission offer (with confirmation)
+•	Print admission letter and payment receipts (PDF)
+•	Schedule interview/entrance exam slots (calendar interface)
+•	Support ticket system (in-app messaging)
+•	Profile management (update contact info)
+1.3 Online Assessment Integration
+Features:
+•	Entrance exam scheduling (admin-defined time slots)
+•	Online aptitude test (MCQ-based with anti-cheat measures)
+•	Timed assessments with auto-submit
+•	Browser tab detection (warns if student switches tabs)
+•	Interview slot booking with calendar integration
+•	Assessment result notification (email + dashboard)
+•	Practice test mode (unlimited attempts)
+•	Question randomization
+1.4 Payment Integration (cPanel Compatible)
+Features:
+•	Application fee payment
+•	Acceptance fee payment
+•	African Payment Gateways (API-based, no SDKs): 
+o	Paystack (cURL integration)
+o	Flutterwave (cURL integration)
+o	MTN Mobile Money (API integration)
+o	Vodafone Cash (API integration)
+o	AirtelTigo Money (API integration)
+•	International Gateways: 
+o	Stripe (cURL integration)
+o	PayPal (REST API)
+•	Manual payment recording (bank deposits, cash)
+•	Payment status verification via webhooks (with signature validation)
+•	Automatic receipt generation (FPDF library - pure PHP)
+•	Payment reminder system (cron-based email)
+•	Installment payment support
+•	Refund management with approval workflow
+•	Payment reconciliation reports
+________________________________________
+MODULE 2: ADMINISTRATIVE PORTAL
+2.1 Application Processing
+Features:
+•	Application queue management (Pending, Under Review, Approved, Rejected, Waitlisted)
+•	Bulk application import (CSV/Excel via PhpSpreadsheet)
+•	Advanced filtering and search: 
+o	By program, level, date range, status
+o	By academic performance thresholds
+o	By payment status
+o	By geographical location
+•	Application scoring/rating system (weighted criteria)
+•	Automated eligibility checking based on configurable rules
+•	Document verification workflow (approve/reject individual documents)
+•	Bulk approve/reject with reason notes
+•	Application assignment to reviewers (workload distribution)
+•	Review comments and internal notes (thread-based)
+•	Application comparison tool (side-by-side view up to 4 applications)
+•	Duplicate application detection (fuzzy matching on name, email, phone)
+•	Application tracking number generation
+•	Quick actions (approve, reject, request more info)
+2.2 Admission Decision Management
+Features:
+•	Admission offer letter generation (customizable Word/PDF templates)
+•	Conditional admission offers (with specified conditions)
+•	Waitlist management (auto-promote when slots available)
+•	Admission quota management per program
+•	Merit-based vs quota-based admission rules (configurable scoring)
+•	Bulk admission letter sending (queued email/SMS via cron)
+•	Admission deadline tracking (with auto-reminders)
+•	Offer acceptance tracking (real-time dashboard)
+•	Automatic student record creation upon acceptance
+•	Provisional admission (pending document submission)
+•	Admission statistics (acceptance rate, yield rate)
+2.3 Communication Center
+Features:
+•	Email Template Builder: 
+o	WYSIWYG editor (TinyMCE CDN)
+o	Drag-and-drop placeholder insertion
+o	Preview before sending
+o	Save custom templates
+•	SMS Template Builder: 
+o	Character count tracker
+o	Unicode support (for local languages)
+o	Personalization tokens
+•	Bulk Messaging (Queued via Cron): 
+o	To all applicants
+o	To filtered groups (by status, program, etc.)
+o	To individual applicants
+•	Scheduled messaging (date/time picker)
+•	Message tracking: 
+o	Delivery status (sent, failed, bounced)
+o	Email open tracking (pixel-based)
+o	Link click tracking
+•	Automated Notifications (Trigger-based): 
+o	Application received
+o	Documents uploaded
+o	Payment confirmed
+o	Admission decision
+o	Deadline reminders (3 days, 1 day before)
+o	Incomplete application reminders
+•	SMS/Email gateway configuration (cPanel-friendly SMTP, API keys)
+•	Message queue monitor (retry failed messages)
+•	Unsubscribe management
+2.4 Reporting & Analytics
+Features:
+•	Real-time Dashboard: 
+o	Total applications (by status, program, level)
+o	Conversion funnel (applied → paid → admitted → accepted)
+o	Payment collection statistics (daily, weekly, monthly)
+o	Geographical distribution (interactive map using Chart.js)
+o	Application trend graph (daily applications over time)
+o	Top programs by application volume
+•	Custom Report Builder: 
+o	Drag-and-drop report designer
+o	Filter by multiple criteria
+o	Choose columns to display
+o	Sort and group data
+•	Exportable reports (PDF via FPDF, Excel via PhpSpreadsheet, CSV)
+•	Application trend analysis (year-over-year comparison)
+•	Program popularity analytics
+•	Applicant demographics analysis (age, gender, location)
+•	Revenue reports (collected vs pending)
+•	Admission funnel visualization
+•	Scheduled automated reports (daily/weekly/monthly email via cron)
+•	Custom date range reports
+•	Export application data (for external analysis)
+2.5 Configuration & Settings Management
+Features:
+•	Academic Year/Session Management: 
+o	Create/edit academic sessions
+o	Set application opening/closing dates
+o	Duplicate previous session settings
+•	Program/Course Management: 
+o	Add/edit programs (with departments)
+o	Set admission quotas per program
+o	Define eligibility criteria (minimum grades, age limits)
+o	Set application fees (per program)
+o	Program descriptions and requirements
+o	Enable/disable programs
+•	Application Form Builder: 
+o	Drag-and-drop form designer (50+ field types)
+o	Conditional field logic (show/hide based on answers)
+o	Custom validation rules (regex, min/max, required)
+o	Multi-language field labels
+o	Field grouping (personal info, academic info, etc.)
+o	Preview mode
+•	Document requirement configuration per program
+•	Admission criteria setup (automated scoring rules with weights)
+•	Email/SMS Gateway Configuration: 
+o	SMTP settings (host, port, username, password, encryption)
+o	Test email functionality
+o	SMS API credentials (provider-specific)
+o	SMS sender ID customization
+•	Payment Gateway Configuration: 
+o	Enable/disable specific gateways
+o	API keys/secrets (encrypted storage)
+o	Webhook URL generation
+o	Test mode toggle
+o	Currency settings
+•	Fee structure management (application, acceptance, late fees)
+•	User role and permission management (granular permissions)
+•	Institution Branding: 
+o	Upload logo (auto-resize)
+o	Primary/secondary color picker
+o	Email header/footer customization
+o	Admission letter header customization
+•	Terms and conditions editor (WYSIWYG)
+•	Privacy policy editor (WYSIWYG)
+•	Contact information settings
+________________________________________
+MODULE 3: SUPER ADMIN PORTAL
+3.1 Multi-Institution Management (Optional Feature)
+Features:
+•	Institution/Campus management (multi-tenant)
+•	Institution-specific configurations (isolated settings)
+•	Centralized reporting across institutions
+•	License management (per institution)
+•	Institution user limits
+3.2 System Administration
+Features:
+•	User Management: 
+o	Create, edit, deactivate admin users
+o	Assign roles (Super Admin, Admission Officer, Reviewer, etc.)
+o	Password reset (force password change on next login)
+o	User activity log
+o	Login history (IP, device, timestamp)
+•	Audit Trail Viewer: 
+o	All system activities log
+o	Filter by user, action, date range
+o	Export audit logs (CSV)
+•	System Health Monitoring: 
+o	Disk space usage
+o	Database size
+o	Email queue status
+o	Recent errors log
+o	PHP info viewer
+•	Database Backup and Restore: 
+o	One-click backup (SQL dump)
+o	Scheduled automatic backups (via cron)
+o	Download backup files
+o	Restore from backup (with confirmation)
+o	Backup to external storage (FTP, Dropbox)
+•	Email queue monitoring (pending, sent, failed)
+•	Error logs viewer (with search and filter)
+•	Clear cache functionality
+•	Session management (view active sessions, force logout)
+3.3 System Configuration
+Features:
+•	General Settings: 
+o	Application name
+o	Timezone selection
+o	Currency (GHS, NGN, USD, etc.)
+o	Date/time format
+o	Default language
+•	Email Server Configuration: 
+o	SMTP settings (works with cPanel email)
+o	Test email function
+o	Email from name/address
+•	SMS Gateway Configuration: 
+o	Provider selection (Paystack, Flutterwave, Twilio, etc.)
+o	API credentials
+o	Test SMS function
+•	Storage Configuration: 
+o	Upload directory path
+o	Maximum file size limits
+o	Allowed file types
+•	Security Settings: 
+o	Password policies (length, complexity)
+o	Session timeout duration
+o	2FA enforcement (optional/mandatory)
+o	Login attempt limit (before account lock)
+o	IP whitelist for admin access
+•	Maintenance Mode: 
+o	Enable/disable site access
+o	Custom maintenance message
+o	Allow admin access during maintenance
+•	System Updates: 
+o	Check for updates (version comparison)
+o	Update notification
+o	Changelog viewer
+•	Cron Job Configuration: 
+o	View required cron jobs
+o	Test cron execution
+o	Cron job logs
+________________________________________
+MODULAR ARCHITECTURE FOR FUTURE EXPANSION
+File Structure (cPanel Friendly)
+/public_html (or /public)
+  /index.php (entry point)
+  /assets
+    /css (pre-compiled Tailwind CSS)
+    /js (Vue.js CDN, Alpine.js, custom scripts)
+    /images
+    /fonts
+  /uploads
+    /applications (organized by year/month)
+    /documents
+    /receipts
+  /.htaccess (URL rewriting)
+
+/app (above public_html for security)
+  /modules
+    /admissions (current scope)
+      /controllers
+      /models
+      /views
+      /services
+      /routes.php
+    /students (future)
+    /academics (future)
+    /finance (future)
+    /library (future)
+    /attendance (future)
+  /core
+    /Auth.php (authentication service)
+    /Database.php (PDO wrapper)
+    /Mailer.php (email service)
+    /SMS.php (SMS service)
+    /Payment.php (payment gateway abstraction)
+    /FileUpload.php
+    /PDF.php (FPDF wrapper)
+    /Excel.php (PhpSpreadsheet wrapper)
+    /Validator.php
+    /Session.php
+    /Cache.php (file-based caching)
+    /Router.php
+  /config
+    /database.php
+    /app.php
+    /mail.php
+    /payment.php
+  /helpers
+    /functions.php (global helper functions)
+  /vendor (optional - bundled libraries)
+    /fpdf
+    /phpmailer
+    /phpspreadsheet (lite version)
+Shared Core Services (Reusable Across Modules)
+•	Authentication Service: Session-based auth, JWT for API
+•	Notification Service: Unified email/SMS handling (queued)
+•	Payment Service: Gateway abstraction layer
+•	Report Service: Shared PDF/Excel generation
+•	File Service: Unified upload/download with security
+•	Audit Service: System-wide activity logging
+•	Cache Service: File-based caching (no Redis needed)
+Database Design Principles
+•	Namespaced tables (adm_applications, adm_payments, adm_documents)
+•	Shared tables (users, institutions, sessions, audit_logs)
+•	Foreign key constraints for referential integrity
+•	Indexing on frequently queried fields (status, created_at, user_id)
+•	Soft deletes (deleted_at column)
+•	UTF-8mb4 character set (emoji support)
+•	Optimized for shared hosting (no stored procedures, minimal triggers)
+________________________________________
+INSTALLATION & DEPLOYMENT (cPanel Optimized)
+Minimum Server Requirements
+•	PHP Version: 8.1 or higher
+•	PHP Extensions (Standard on cPanel): 
+o	mysqli
+o	pdo_mysql
+o	gd (image manipulation)
+o	mbstring (multibyte strings)
+o	curl (API calls)
+o	zip (backup/import)
+o	openssl (encryption)
+o	json
+o	fileinfo
+•	MySQL/MariaDB: 5.7+ / 10.3+
+•	Disk Space: 500MB minimum (grows with uploads)
+•	PHP Memory Limit: 128MB minimum (256MB recommended)
+•	Max Execution Time: 60 seconds minimum
+•	Web Server: Apache with mod_rewrite (standard on cPanel)
+Web-Based Installer (No Command Line Required)
+Step 1: Pre-Installation Check
+•	Automatically checks PHP version
+•	Verifies required PHP extensions
+•	Tests database connection
+•	Checks file/folder permissions (uploads, cache, logs)
+•	Displays warnings/errors with solutions
+Step 2: Database Configuration
+•	Database Setup: 
+o	Database host (usually localhost)
+o	Database name (create via cPanel MySQL Databases)
+o	Database username
+o	Database password
+o	Table prefix (default: sms_)
+•	Test Connection button
+•	Auto-creates tables and indexes
+Step 3: Application Configuration
+•	Institution Details: 
+o	Institution name
+o	Institution address
+o	Contact email
+o	Contact phone
+o	Website URL
+•	Application URL: Auto-detected or manual entry
+•	Timezone Selection: Dropdown with African timezones
+•	Currency Selection: GHS, NGN, KES, USD, etc.
+Step 4: Admin Account Creation
+•	Admin full name
+•	Admin email (for login)
+•	Admin password (strength meter)
+•	Admin phone (for 2FA)
+Step 5: Email Configuration (Optional, Skip for Now)
+•	SMTP Settings: 
+o	SMTP host (e.g., mail.yourdomain.com)
+o	SMTP port (465/587)
+o	SMTP username (cPanel email)
+o	SMTP password
+o	Encryption (SSL/TLS)
+•	Test Email button (send to admin email)
+Step 6: Payment Gateway Setup (Optional, Skip for Now)
+•	Select gateways to enable
+•	Enter API keys/secrets
+•	Test mode toggle
+Step 7: Installation Complete
+•	Success message
+•	Auto-Generated: 
+o	Database tables (20+ tables)
+o	Default roles and permissions
+o	Sample data (optional checkbox)
+o	Security keys and salts
+•	Post-Installation Actions: 
+o	Login to admin dashboard
+o	Complete setup wizard (programs, forms, etc.)
+o	Setup cron jobs (instructions provided)
+cPanel Cron Job Setup (Simple Instructions)
+Cron Command (runs every 5 minutes):
+*/5 * * * * php /home/username/public_html/cron.php
+What Cron Jobs Handle:
+•	Sending queued emails (bulk messages)
+•	Sending queued SMS
+•	Payment verification checks
+•	Application deadline reminders
+•	Automated backups (daily)
+•	Cache cleanup
+•	Session cleanup
+User-Friendly Setup:
+•	System provides exact cron command (copy-paste)
+•	Video tutorial link for cPanel cron setup
+•	Alternative: Manual trigger button (for users without cron access)
+File Upload via cPanel
+•	Upload ZIP file via cPanel File Manager
+•	Extract in public_html
+•	Run installer at yourdomain.com/install
+One-Click Softaculous Installer (Future Enhancement)
+•	Pre-packaged for Softaculous/Fantastico
+•	True one-click installation
+•	Auto-configuration
+________________________________________
+UI/UX DESIGN STANDARDS
+Design Philosophy
+•	Clean & Professional: Corporate-grade aesthetics
+•	Data-Dense but Breathable: Efficient use of space without clutter
+•	Accessibility First: WCAG 2.1 AA compliance
+•	Mobile-Responsive: Works perfectly on 320px to 4K screens
+•	African Context: Optimized for low-bandwidth (lazy loading, compressed images)
+•	Color Psychology: Trust-building colors (blues, greens, professional grays)
+UI Component Library (No Emojis, Professional Only)
+•	Color Scheme: 
+o	Primary: Customizable (default: #2563eb - Professional Blue)
+o	Secondary: Customizable (default: #10b981 - Success Green)
+o	Danger: #ef4444 (Red)
+o	Warning: #f59e0b (Amber)
+o	Gray scale: Tailwind default
+•	Typography: 
+o	Headings: Inter (Google Fonts CDN)
+o	Body: System fonts (for performance)
+o	Size scale: 12px, 14px, 16px, 18px, 20px, 24px, 30px, 36px
+•	Icons: 
+o	Heroicons (CDN, 300+ icons)
+o	Lucide Icons (alternative)
+o	NO emojis anywhere in the system
+•	Buttons: 
+o	Primary (filled), Secondary (outlined), Ghost (text only)
+o	Sizes: sm, md, lg
+o	Loading states (spinner)
+o	Disabled states
+•	Forms: 
+o	Floating labels or top-aligned labels
+o	Inline validation (real-time feedback)
+o	Error messages below fields (red text, icon)
+o	Success states (green border)
+o	Helper text (gray, small font)
+o	Required field indicator (red asterisk)
+•	Data Tables: 
+o	Striped rows for readability
+o	Sortable columns (click header)
+o	Filterable (per-column or global search)
+o	Pagination (show 10/25/50/100 per page)
+o	Row actions (edit, delete, view)
+o	Bulk actions checkbox
+o	Export buttons (CSV, Excel, PDF)
+o	Mobile: Card view (stacked)
+•	Cards: 
+o	Subtle shadow (elevation-1)
+o	Rounded corners (6px)
+o	White background
+o	Proper padding (16px)
+•	Modals/Dialogs: 
+o	Center-aligned or slide-in
+o	Backdrop overlay (semi-transparent black)
+o	Close button (X icon)
+o	Confirmation dialogs for destructive actions
+o	Max-width: 600px
+•	Notifications/Toasts: 
+o	Top-right corner
+o	Auto-dismiss (5 seconds)
+o	Types: success, error, warning, info
+o	Icon + message + close button
+o	Stack multiple notifications
+•	Loading States: 
+o	Skeleton screens (pulsing gray boxes)
+o	Spinner overlays for page loads
+o	Button spinners for actions
+o	Progress bars for uploads
+•	Empty States: 
+o	Illustration or icon
+o	Helpful message
+o	Call-to-action button
+o	Example: "No applications yet. Start by creating your first program."
+•	Animations: 
+o	Subtle fade-in (200ms)
+o	Smooth hover transitions (150ms)
+o	Slide-in for modals (300ms)
+o	NO excessive or distracting animations
+Responsive Breakpoints
+•	Mobile: 320px - 639px (single column, stacked cards)
+•	Tablet: 640px - 1023px (2-column grid)
+•	Desktop: 1024px - 1279px (3-column grid, sidebar)
+•	Large Desktop: 1280px+ (full sidebar, multi-column dashboards)
+Dashboard Layout
+•	Sidebar Navigation: 
+o	Collapsible on mobile (hamburger menu)
+o	Icons + text labels
+o	Active state highlighting
+o	Grouped menu items
+•	Top Bar: 
+o	Institution logo (left)
+o	Search bar (center, if applicable)
+o	Notifications bell (right)
+o	User profile dropdown (right)
+•	Content Area: 
+o	Breadcrumb navigation
+o	Page title + action buttons
+o	Content cards/tables
+o	Proper spacing (24px between sections)
+Performance Optimization for Shared Hosting
+•	Lazy Loading Images: Load images as user scrolls
+•	CDN for Libraries: Vue.js, Tailwind, Chart.js from CDN
+•	Minified CSS/JS: Single compressed file per page
+•	Image Optimization: Auto-resize uploads, WebP format support
+•	Database Query Optimization: Indexed columns, limited JOINs
+•	File-Based Caching: Cache dashboard stats, reports (5-minute TTL)
+•	Pagination: Never load more than 50 records at once
+•	Async Loading: Load heavy components after page load
+________________________________________
+ADDITIONAL FEATURES FOR COMPETITIVE ADVANTAGE
+1. Multi-Language Support
+•	Built-in Languages: 
+o	English (default)
+o	French (for Francophone Africa)
+•	Easy Language Addition: 
+o	Language files in /app/languages/
+o	JSON format: {"key": "translation"}
+o	Admin can add languages via UI (no code editing)
+•	RTL Support: For Arabic (future)
+2. Offline Application Form (Downloadable)
+•	PDF Application Form: 
+o	Generate fillable PDF from application form builder
+o	Includes barcode/QR code (for tracking)
+o	Applicant fills manually
+o	Admin uploads scanned copy + enters data
+•	Offline Submission Tracking: 
+o	Mark application as "Offline Submission"
+o	Attach scanned documents
+o	Link to online applicant account (if created later)
+3. Parent/Guardian Portal
+•	Features: 
+o	Separate login (linked to applicant)
+o	View ward's application status
+o	Receive email/SMS notifications
+o	Make payments on behalf of applicant
+o	Upload documents for ward
+o	Communicate with admin
+•	Multi-Ward Support: One parent account, multiple wards
+4. Integration APIs (Future Mobile App / Third-Party)
+•	RESTful API: 
+o	JWT authentication
+o	Endpoints for all major functions
+o	Rate limiting (file-based)
+o	API documentation (Swagger-style)
+•	Webhooks: 
+o	Payment confirmation webhooks
+o	Application status change webhooks
+o	Custom webhook URLs per event
+•	Mobile App Ready: JSON responses, optimized for mobile
+5. White-Label / Multi-Tenant Support
+•	Features: 
+o	Multiple institutions on one installation
+o	Separate databases per institution (data isolation)
+o	Custom domain per institution (via cPanel Addon Domains)
+o	Institution-specific branding (logo, colors)
+o	Centralized super admin portal
+o	Per-institution licensing
+•	Use Cases: 
+o	SaaS offering (schools subscribe)
+o	School district with multiple campuses
+o	Reseller/franchise model
+6. Advanced Security Features
+•	IP Whitelisting: 
+o	Restrict admin access to specific IPs
+o	Whitelist multiple IPs (office, home, etc.)
+•	Login Attempt Limiting: 
+o	Lock account after 5 failed attempts
+o	CAPTCHA after 3 attempts
+o	Temporary lockout (15 minutes)
+•	Password Policy Enforcement: 
+o	Minimum length (8 characters)
+o	Require uppercase, lowercase, numbers, symbols
+o	Password expiry (optional, e.g., 90 days)
+o	Cannot reuse last 5 passwords
+•	Security Questions: 
+o	For password recovery (alternative to email)
+o	Custom questions per institution
+•	Email Verification: 
+o	Verify email on registration
+o	Resend verification email
+•	Two-Factor Authentication (2FA): 
+o	Email-based OTP (6-digit code)
+o	SMS-based OTP (if SMS gateway configured)
+o	Backup codes (printable)
+o	Optional or mandatory (per role)
+•	Session Security: 
+o	Bind session to IP address (optional)
+o	Detect concurrent logins (warn user)
+o	Force logout all devices option
+7. Backup & Recovery (cPanel Friendly)
+•	Automated Backups: 
+o	Daily database backups (via cron)
+o	Weekly full backups (database + uploads)
+o	Retention policy (keep last 7 daily, 4 weekly)
+o	Backup to local server (secure folder above public_html)
+•	Manual Backup: 
+o	One-click backup button
+o	Download backup file (ZIP)
+o	Backup size display
+•	Restore Functionality: 
+o	Upload backup file
+o	Preview backup contents (database tables, file count)
+o	One-click restore (with confirmation)
+o	Backup before restore (auto-safety backup)
+•	External Backup Storage (Optional): 
+o	FTP/SFTP upload (to remote server)
+o	Dropbox integration (via API)
+o	Google Drive integration
+•	Database Export: 
+o	Export full database (SQL dump)
+o	Export specific tables
+o	Export filtered data (e.g., one academic year)
+8. Applicant Portal Enhancements
+•	Application Status Notifications: 
+o	Real-time browser notifications (if enabled)
+o	Email notifications (all status changes)
+o	SMS notifications (critical updates only, to save costs)
+•	Document Upload Reminders: 
+o	If incomplete after 3 days, send reminder
+o	List pending documents
+•	Payment Reminders: 
+o	Daily reminders if payment pending
+o	Escalating urgency (3 days before deadline)
+•	Interview/Exam Reminders: 
+o	1 day before scheduled time
+o	1 hour before (SMS + email)
+•	Application Deadline Countdown: 
+o	Dashboard widget showing days remaining
+o	Urgent banner if <3 days remaining
+9. Admin Portal Enhancements
+•	Quick Actions Bar: 
+o	Recently viewed applications (quick access)
+o	Pending approvals counter
+o	Today's interviews/exams
+o	Payment verification queue
+•	Bulk Operations: 
+o	Bulk email/SMS to selected applicants
+o	Bulk document approval
+o	Bulk status change (with reason)
+o	Bulk export (CSV/Excel)
+•	Application Notes & History: 
+o	Timeline of all actions on application
+o	Who did what, when (audit trail)
+o	Internal notes (not visible to applicant)
+o	Attachments to notes (screenshots, etc.)
+•	Reviewer Workload Balancing: 
+o	Auto-assign applications to reviewers
+o	Workload dashboard (applications per reviewer)
+o	Reassign applications
+•	Application Comparison Tool: 
+o	Side-by-side view (up to 4 applications)
+o	Highlight differences (scores, documents, etc.)
+o	Quick action buttons (approve, reject)
+10. Payment Management Enhancements
+•	Payment Verification Queue: 
+o	Manual payments awaiting verification (bank deposits, cash)
+o	Upload proof of payment (applicant side)
+o	Approve/reject with reason (admin side)
+o	Auto-email applicant on approval/rejection
+•	Payment Reconciliation: 
+o	Match payments to applications
+o	Identify overpayments/underpayments
+o	Refund management (initiate, track, approve)
+o	Generate reconciliation reports
+•	Multiple Payment Methods: 
+o	Online (via payment gateways)
+o	Bank deposit (upload receipt)
+o	Cash (at institution office, receipt generated)
+o	Cheque (with clearance tracking)
+•	Partial Payments: 
+o	Installment plans (e.g., 50% now, 50% later)
+o	Track outstanding balance
+o	Auto-reminders for next installment
+•	Receipt Management: 
+o	Auto-generate numbered receipts
+o	Downloadable PDF
+o	Email receipt to applicant
+o	Reprint receipt option
+11. Reporting Enhancements
+•	Custom Dashboard Widgets: 
+o	Drag-and-drop widget arrangement
+o	Choose which metrics to display
+o	Widget refresh intervals (real-time, 5 min, 1 hour)
+•	Scheduled Reports (Email Delivery): 
+o	Daily summary (applications received, payments, etc.)
+o	Weekly performance report
+o	Monthly revenue report
+o	Custom schedule (choose metrics, frequency)
+•	Export Templates: 
+o	Save custom export configurations
+o	Reuse for future exports
+o	Share templates with other admins
+•	Visual Analytics: 
+o	Charts: Line, bar, pie, donut (Chart.js)
+o	Interactive (hover for details)
+o	Drill-down (click chart to see details)
+o	Comparison charts (this year vs last year)
+•	Geographical Analytics: 
+o	Applicant distribution by region/city
+o	Interactive map (click region to filter)
+o	Export map as image
+________________________________________
+PERFORMANCE OPTIMIZATION (Shared Hosting Specific)
+Caching Strategy (No Redis/Memcached)
+•	File-Based Caching: 
+o	Cache folder: /app/cache/
+o	Dashboard stats (5-minute TTL)
+o	Report data (1-hour TTL)
+o	Configuration settings (until changed)
+o	System settings (permanent until updated)
+•	Browser Caching: 
+o	.htaccess rules for static assets (30 days)
+o	Versioned CSS/JS files (cache busting)
+•	Database Query Caching: 
+o	Cache frequent queries (dropdown options, etc.)
+o	Invalidate on data change
+Database Optimization
+
+
+remove these:
+1.3 Online Assessment Integration
+Refund management with approval workflow
+
+Also add:
+1. Admin must also have more control, like managing programes, levels, requirements, school logo, application color theme, school info like contacts, locations, copyright text (should hardcoded the © and the year (dynamically changes every year), etc
+2. There should be waiver code management too.
+3. The system should not have too much required settings, it should be easy for anyone with minimal technical know-how to set up
+
+Provide two togglable options (only one can be active at a time): A) Payment during/after application B) Generation of vouchers (serial and PIN numbers). In the case where the serial number is what is toggled, applicant is required to purchase voucher first, and enter purchased serial number and PIN at the begining to access application which takes away the payment requirement after forms.
+Admin should be able to set and manage multiple fees.
+"ADDITIONAL FEATURES FOR COMPETITIVE ADVANTAGE" consider only the below for now:
+Offline Application Form (Downloadable)
+* PDF Application Form:
+   * Generate fillable PDF from application form builder
+   * Includes barcode/QR code (for tracking)
+   * Applicant fills manually and submits physically
+   * Admin uploads scanned copy + enters data manually
+   * Option to send acknowledgment email with tracking number
+* Offline Submission Tracking:
+   * Mark application as "Offline Submission"
+   * Attach scanned documents (multiple files)
+   * Link to online applicant account (if created later)
+   * Notify applicant when data is entered
+* Bulk Offline Upload:
+   * CSV template for bulk data entry
+   * Import multiple offline applications at once
+   * Auto-validation and error reporting
+* Email Verification: 
+   * Verify email on registration (applicant portal)
+   * Resend verification email option
+   * Prevent login until email verified
+7. Backup & Recovery (cPanel Friendly)
+* Automated Backups:
+   * Daily database backups (via cron, 2 AM)
+   * Weekly full backups (database + uploads folder)
+   * Retention policy (keep last 7 daily, 4 weekly, 3 monthly)
+   * Backup to local server (secure folder above public_html)
+   * Backup file naming: backup_YYYY-MM-DD_HH-MM-SS.zip
+* Manual Backup:
+   * One-click backup button (admin dashboard)
+   * Progress indicator (percentage)
+   * Download backup file (ZIP, includes SQL + uploads)
+   * Backup size display (before and after compression)
+   * Email backup link to admin (optional)
+* Restore Functionality:
+   * Upload backup file (drag-and-drop or file picker)
+   * Validate backup (check integrity, compatibility)
+   * Preview backup contents:
+      * Database tables list
+      * File count and size
+      * Backup date/time
+   * Safety Feature: Auto-create backup before restore
+   * One-click restore (with confirmation, "This will overwrite existing data")
+   * Restore progress indicator
+   * Success/error notification
+* Database Export:
+   * Export full database (SQL dump, gzipped)
+   * Export specific tables (multi-select)
+   * Export filtered data:
+      * One academic year only
+      * One program only
+      * Date range filter
+   * Export format: SQL, CSV (per table)
+8. Applicant Portal Enhancements
+* Application Status Notifications:
+   * Real-time browser notifications (if enabled by user)
+   * Email notifications (all status changes)
+   * SMS notifications (critical updates only: payment confirmed, admission decision)
+   * In-app notification badge (unread count)
+   * Notification history (view all past notifications)
+* Document Upload Reminders:
+   * If incomplete after 3 days, send first reminder (email)
+   * Second reminder after 7 days (email + SMS)
+   * Final reminder 1 day before application deadline (urgent email + SMS)
+   * List pending documents in reminder
+* Payment Reminders:
+   * Daily reminders if payment pending (email only)
+   * Escalating urgency:
+      * 7 days before deadline: "Payment Due Soon"
+      * 3 days before deadline: "Urgent: Payment Due in 3 Days"
+      * 1 day before deadline: "Final Reminder: Payment Due Tomorrow" (email + SMS)
+   * Payment link in every reminder
+* Application Deadline Countdown:
+   * Dashboard widget showing days/hours remaining
+   * Urgent banner if <3 days remaining (red, pulsing)
+   * Countdown timer if <24 hours (hours:minutes:seconds)
+* Application Print Summary:
+   * Print-friendly version (CSS optimized)
+   * Includes all submitted data
+   * Document checklist (uploaded vs pending)
+   * Payment status
+   * QR code (for offline verification)
+   * Barcode (application tracking number)
+9. Admin Portal Enhancements
+* Quick Actions Dashboard Widget:
+   * Recently viewed applications (last 5, quick links)
+   * Pending approvals counter (clickable, filters to pending)
+   * Today's payment verifications (counter + link)
+   * Urgent actions:
+      * Applications expiring today (deadline to review)
+      * Incomplete document verifications
+   * Quick stats: Today's applications, week's applications, pending payments
+* Bulk Operations:
+   * Bulk email/SMS to selected applicants:
+      * Select from table (checkboxes)
+      * "Email Selected" and "SMS Selected" buttons
+      * Preview recipients before sending
+   * Bulk document approval:
+      * View all pending documents (paginated)
+      * Select multiple (checkboxes)
+      * "Approve All" or "Reject All" buttons
+      * Bulk reason (applies to all)
+   * Bulk status change:
+      * Select applications (checkboxes)
+      * Change status dropdown (Approve, Reject, Waitlist)
+      * Bulk reason textarea (mandatory for rejection)
+      * Confirmation dialog
+   * Bulk export:
+      * CSV: All selected applications data
+      * Excel: With formatting and multiple sheets
+      * PDF: Individual admission letters (ZIP file)
+Multiple Payment Methods: 
+* Online (via payment gateways):
+   * Instant verification
+   * Auto-generated receipt
+   * Email confirmation
+* Bank Deposit:
+   * Display bank account details
+   * Upload deposit slip (applicant)
+   * Manual verification (admin)
+* Cash (at institution office):
+   * Admin records payment (amount, date, receipt number)
+   * Print receipt (FPDF)
+   * Mark as "Cash Payment"
+* Cheque:
+   * Record cheque details (number, bank, date)
+   * Clearance tracking (pending, cleared, bounced)
+   * Update payment status on clearance
+* Mobile Money (Manual):
+   * Display mobile money numbers
+   * Upload transaction screenshot
+   * Manual verification
+* Auto-generate numbered receipts:
+   * Sequential numbering (per academic year)
+   * Format: RCP-2025-00001
+   * Duplicate prevention
+* Receipt details:
+   * Institution name, logo
+   * Applicant name, application number
+   * Payment date, amount, method
+   * Payment reference/transaction ID
+   * Balance (if partial payment)
+   * Admin signature (digital/scanned)
+* Downloadable PDF:
+   * Professional design
+   * Printable (A5 or A4)
+* Email receipt to applicant (auto)
+* Reprint receipt option (admin):
+   * View all receipts (paginated table)
+   * Reprint any receipt (regenerate PDF)
+   * Mark as "Duplicate Receipt" (watermark)
