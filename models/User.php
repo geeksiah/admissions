@@ -121,6 +121,13 @@ class User {
     }
     
     /**
+     * Login method (alias for authenticate)
+     */
+    public function login($email, $password) {
+        return $this->authenticate($email, $password);
+    }
+    
+    /**
      * Update user
      */
     public function update($id, $data) {

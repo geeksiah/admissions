@@ -622,11 +622,11 @@ if (!in_array($panel, $validPanels)) {
         
         /* Panel Content */
         .panel-content {
-            display: none;
+            display: none !important;
         }
         
         .panel-content.active {
-            display: block;
+            display: block !important;
         }
     </style>
 </head>
@@ -826,15 +826,24 @@ if (!in_array($panel, $validPanels)) {
             
             // Function to show panel
             function showPanel(panelName) {
-                console.log('Attempting to show panel:', panelName);
+                console.log('=== showPanel called ===');
+                console.log('Panel name:', panelName);
                 console.log('Available navLinks:', navLinks.length);
                 console.log('Available panelContents:', panelContents.length);
                 
                 // Remove active class from all nav links
-                navLinks.forEach(nl => nl.classList.remove('active'));
+                console.log('Removing active class from nav links...');
+                navLinks.forEach((nl, index) => {
+                    nl.classList.remove('active');
+                    console.log(`Nav link ${index} active class removed`);
+                });
                 
                 // Hide all panel contents
-                panelContents.forEach(panel => panel.classList.remove('active'));
+                console.log('Hiding all panel contents...');
+                panelContents.forEach((panel, index) => {
+                    panel.classList.remove('active');
+                    console.log(`Panel ${index} (${panel.id}) active class removed`);
+                });
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
@@ -867,7 +876,8 @@ if (!in_array($panel, $validPanels)) {
                 window.history.pushState({}, '', url);
             }
             
-            navLinks.forEach(link => {
+            navLinks.forEach((link, index) => {
+                console.log(`Setting up click listener for nav link ${index}:`, link.getAttribute('data-panel'));
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
