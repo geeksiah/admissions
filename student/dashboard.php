@@ -376,24 +376,17 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
         /* Mobile Toggle Button */
         .sidebar-toggle {
             display: none;
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1001;
-            background: var(--primary-color);
-            color: white;
+            background: none;
             border: none;
-            padding: 0.75rem;
-            border-radius: var(--radius-md);
-            font-size: 1.25rem;
+            color: var(--text-primary);
+            font-size: 1.5rem;
             cursor: pointer;
-            box-shadow: var(--shadow-md);
-            transition: all 0.2s ease;
+            padding: 0.5rem;
+            margin-right: 1rem;
         }
         
         .sidebar-toggle:hover {
-            background: var(--secondary-color);
-            transform: translateY(-1px);
+            color: var(--primary-color);
         }
         
         @media (max-width: 768px) {
@@ -404,11 +397,6 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
     </style>
 </head>
 <body>
-    <!-- Mobile Toggle Button -->
-    <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="bi bi-list"></i>
-    </button>
-    
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -450,6 +438,9 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
         <!-- Header -->
         <header class="top-header">
             <div class="header-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
                 <h5 class="page-title" id="pageTitle">Student Dashboard</h5>
             </div>
             
