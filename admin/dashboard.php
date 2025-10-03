@@ -509,9 +509,42 @@ try {
                 font-size: 1rem;
             }
         }
+        /* Mobile Toggle Button */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 1.25rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Mobile Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
+    
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -675,29 +708,31 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Panel switching with proper class management
-        function switchPanel(panelName) {
-            // Remove active class from all panels
-            document.querySelectorAll('.panel-content').forEach(panel => {
-                panel.classList.remove('active');
-            });
+        // Panel switching using student dashboard approach
+        function showPanel(panelName) {
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            const panelContents = document.querySelectorAll('.panel-content');
             
-            // Add active class to target panel
-            const targetPanel = document.getElementById(panelName + '-panel');
-            if (targetPanel) {
-                targetPanel.classList.add('active');
+            // Remove active class from all nav links
+            navLinks.forEach(nl => nl.classList.remove('active'));
+            
+            // Hide all panel contents
+            panelContents.forEach(panel => panel.classList.remove('active'));
+            
+            // Show target panel
+            const targetPanelElement = document.getElementById(panelName + '-panel');
+            if (targetPanelElement) {
+                targetPanelElement.classList.add('active');
             }
             
-            // Update navigation active state
-            document.querySelectorAll('.nav-link[data-panel]').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('data-panel') === panelName) {
-                    link.classList.add('active');
-                }
-            });
+            // Add active class to corresponding nav link
+            const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+            if (targetNavLink) {
+                targetNavLink.classList.add('active');
+            }
             
             // Update page title
-            const titles = {
+            const panelTitles = {
                 'overview': 'Dashboard Overview',
                 'applications': 'Manage Applications',
                 'students': 'Manage Students',
@@ -710,58 +745,70 @@ try {
                 'system': 'System Administration'
             };
             
-            document.getElementById('pageTitle').textContent = titles[panelName] || 'Dashboard';
-            
-             // Update URL hash
-             if (window.location.hash !== '#' + panelName) {
-                 window.location.hash = panelName;
-             }
-            
-            // Close mobile sidebar
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('show');
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle && panelTitles[panelName]) {
+                pageTitle.textContent = panelTitles[panelName];
             }
+            
+            // Update URL without page reload
+            const url = new URL(window.location);
+            url.searchParams.set('panel', panelName);
+            window.history.pushState({}, '', url);
         }
         
         // Initialize after DOM loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Attach click events to nav links
-            document.querySelectorAll('.nav-link[data-panel]').forEach(link => {
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            const panelContents = document.querySelectorAll('.panel-content');
+            
+            navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    switchPanel(this.getAttribute('data-panel'));
+                    const targetPanel = this.getAttribute('data-panel');
+                    showPanel(targetPanel);
                 });
             });
+            
+            // Handle browser back/forward buttons
+            window.addEventListener('popstate', function(e) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const panel = urlParams.get('panel') || 'overview';
+                showPanel(panel);
+            });
+            
+            // Initialize panel based on URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialPanel = urlParams.get('panel') || 'overview';
+            showPanel(initialPanel);
             
             // Mobile sidebar toggle
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('sidebar');
             
-            if (toggle) {
+            if (toggle && sidebar) {
                 toggle.addEventListener('click', () => {
                     sidebar.classList.toggle('show');
                 });
+                
+                // Close sidebar when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                        sidebar.classList.remove('show');
+                    }
+                });
+                
+                // Close sidebar when panel is selected on mobile
+                navLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('show');
+                        }
+                    });
+                });
             }
-            
-             // Load panel from URL hash
-             if (window.location.hash) {
-                 const panel = window.location.hash.substring(1);
-                 if (panel && document.getElementById(panel + '-panel')) {
-                     switchPanel(panel);
-                 } else {
-                     switchPanel('overview'); // Default to overview if invalid hash
-                 }
-             } else {
-                 switchPanel('overview'); // Default to overview if no hash
-             }
-            
-            // Handle back/forward navigation
-            window.addEventListener('hashchange', () => {
-                if (window.location.hash) {
-                    switchPanel(window.location.hash.substring(1));
-                }
-            });
         });
     </script>
 </body>
+</html>
+</html>
 </html>
