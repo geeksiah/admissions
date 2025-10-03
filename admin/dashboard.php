@@ -791,8 +791,10 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        console.log('Script starting...');
+        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Dashboard loaded, initializing navigation...');
+            console.log('DOM Content Loaded - Dashboard initializing navigation...');
             
             const navLinks = document.querySelectorAll('.sidebar-nav .nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
@@ -914,6 +916,15 @@ try {
             
             console.log('Navigation initialization complete');
         });
+        
+        // Immediate test without waiting for DOM
+        setTimeout(function() {
+            console.log('Testing immediate script execution...');
+            const testLinks = document.querySelectorAll('.sidebar-nav .nav-link[data-panel]');
+            console.log('Immediate test - Found nav links:', testLinks.length);
+        }, 1000);
+        
+        console.log('Script loaded successfully');
     </script>
 </body>
 </html>
