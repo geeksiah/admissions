@@ -712,8 +712,10 @@ try {
             
             document.getElementById('pageTitle').textContent = titles[panelName] || 'Dashboard';
             
-            // Update URL hash
-            window.location.hash = panelName;
+             // Update URL hash
+             if (window.location.hash !== '#' + panelName) {
+                 window.location.hash = panelName;
+             }
             
             // Close mobile sidebar
             if (window.innerWidth <= 768) {
@@ -741,13 +743,17 @@ try {
                 });
             }
             
-            // Load panel from URL hash
-            if (window.location.hash) {
-                const panel = window.location.hash.substring(1);
-                if (document.getElementById(panel + '-panel')) {
-                    switchPanel(panel);
-                }
-            }
+             // Load panel from URL hash
+             if (window.location.hash) {
+                 const panel = window.location.hash.substring(1);
+                 if (panel && document.getElementById(panel + '-panel')) {
+                     switchPanel(panel);
+                 } else {
+                     switchPanel('overview'); // Default to overview if invalid hash
+                 }
+             } else {
+                 switchPanel('overview'); // Default to overview if no hash
+             }
             
             // Handle back/forward navigation
             window.addEventListener('hashchange', () => {

@@ -90,7 +90,7 @@ class Program {
      * Get all programs
      */
     public function getAll($activeOnly = false, $limit = null, $offset = 0) {
-        $sql = "SELECT p.*, u.full_name as created_by_name,
+        $sql = "SELECT p.*, CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
                        COUNT(a.id) as application_count
                 FROM programs p
                 LEFT JOIN users u ON p.created_by = u.id
