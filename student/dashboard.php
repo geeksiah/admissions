@@ -615,37 +615,27 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
         <div class="content-wrapper">
             <!-- Overview Panel -->
             <div class="panel-content active" id="overview-panel">
-                <div class="alert alert-success">
-                    <h4>Student Dashboard Overview</h4>
-                    <p>Welcome to the student dashboard. Navigation should be working now.</p>
-                    <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
-                    <button class="btn btn-primary mt-2" onclick="alert('Basic JavaScript works!'); console.log('Button clicked');">
-                        Test Basic JavaScript
-                    </button>
-                    <button class="btn btn-secondary mt-2" onclick="if(window.showPanel) { alert('showPanel function exists'); window.showPanel('applications'); } else { alert('showPanel function does NOT exist'); }">
-                        Test Navigation Function
-                    </button>
-                </div>
+                <?php include 'panels/overview.php'; ?>
             </div>
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <div class="alert alert-info">Applications Panel - Navigation Test</div>
+                <?php include 'panels/applications.php'; ?>
             </div>
             
             <!-- Programs Panel -->
             <div class="panel-content" id="programs-panel">
-                <div class="alert alert-info">Programs Panel - Navigation Test</div>
+                <?php include 'panels/programs.php'; ?>
             </div>
             
             <!-- Payment History Panel -->
             <div class="panel-content" id="payments-panel">
-                <div class="alert alert-info">Payments Panel - Navigation Test</div>
+                <?php include 'panels/payments.php'; ?>
             </div>
             
             <!-- Profile Panel -->
             <div class="panel-content" id="profile-panel">
-                <div class="alert alert-info">Profile Panel - Navigation Test</div>
+                <?php include 'panels/profile.php'; ?>
             </div>
         </div>
     </main>
@@ -654,13 +644,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Basic test
-        console.log('Student dashboard script loading...');
-        alert('Student dashboard script loaded - click OK to continue');
-        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Student Dashboard');
-            alert('DOM Content Loaded - Student Dashboard');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');

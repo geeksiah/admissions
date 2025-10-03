@@ -665,18 +665,7 @@ try {
         <div class="content-wrapper">
             <!-- Overview Panel -->
             <div class="panel-content active" id="overview-panel">
-                <?php // include 'panels/overview.php'; ?>
-                <div class="alert alert-success">
-                    <h4>Dashboard Overview</h4>
-                    <p>Welcome to the admin dashboard. Navigation should be working now.</p>
-                    <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
-                    <button class="btn btn-primary mt-2" onclick="alert('Basic JavaScript works!'); console.log('Button clicked');">
-                        Test Basic JavaScript
-                    </button>
-                    <button class="btn btn-secondary mt-2" onclick="if(window.showPanel) { alert('showPanel function exists'); window.showPanel('applications'); } else { alert('showPanel function does NOT exist'); }">
-                        Test Navigation Function
-                    </button>
-                </div>
+                <?php include 'panels/overview.php'; ?>
 
                 <!-- Quick Stats -->
                 <div class="row">
@@ -729,57 +718,57 @@ try {
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <div class="alert alert-info">Applications Panel - Navigation Test</div>
+                <?php include 'panels/applications.php'; ?>
             </div>
             
             <!-- Students Panel -->
             <div class="panel-content" id="students-panel">
-                <div class="alert alert-info">Students Panel - Navigation Test</div>
+                <?php include 'panels/students.php'; ?>
             </div>
             
             <!-- Programs Panel -->
             <div class="panel-content" id="programs-panel">
-                <div class="alert alert-info">Programs Panel - Navigation Test</div>
+                <?php include 'panels/programs.php'; ?>
             </div>
             
             <!-- Application Forms Panel -->
             <div class="panel-content" id="application_forms-panel">
-                <div class="alert alert-info">Application Forms Panel - Navigation Test</div>
+                <?php include 'panels/application_forms.php'; ?>
             </div>
             
             <!-- Users Panel -->
             <div class="panel-content" id="users-panel">
-                <div class="alert alert-info">Users Panel - Navigation Test</div>
+                <?php include 'panels/users.php'; ?>
             </div>
             
             <!-- Payments Panel -->
             <div class="panel-content" id="payments-panel">
-                <div class="alert alert-info">Payments Panel - Navigation Test</div>
+                <?php include 'panels/payments.php'; ?>
             </div>
             
             <!-- Reports Panel -->
             <div class="panel-content" id="reports-panel">
-                <div class="alert alert-info">Reports Panel - Navigation Test</div>
+                <?php include 'panels/reports.php'; ?>
             </div>
             
             <!-- Notifications Panel -->
             <div class="panel-content" id="notifications-panel">
-                <div class="alert alert-info">Notifications Panel - Navigation Test</div>
+                <?php include 'panels/notifications.php'; ?>
             </div>
             
             <!-- Communications Panel -->
             <div class="panel-content" id="communications-panel">
-                <div class="alert alert-info">Communications Panel - Navigation Test</div>
+                <?php include 'panels/communications.php'; ?>
             </div>
             
             <!-- Settings Panel -->
             <div class="panel-content" id="settings-panel">
-                <div class="alert alert-info">Settings Panel - Navigation Test</div>
+                <?php include 'panels/settings.php'; ?>
             </div>
             
             <!-- System Panel -->
             <div class="panel-content" id="system-panel">
-                <div class="alert alert-info">System Panel - Navigation Test</div>
+                <?php include 'panels/system.php'; ?>
             </div>
     </div>
 </div>
@@ -788,13 +777,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Basic test
-        console.log('Admin dashboard script loading...');
-        alert('Admin dashboard script loaded - click OK to continue');
-        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Admin Dashboard');
-            alert('DOM Content Loaded - Admin Dashboard');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
