@@ -76,10 +76,11 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
                 $error = 'Email already registered';
             } else {
                 $userData = [
+                    'username' => $email, // Use email as username for students
                     'first_name' => $firstName,
                     'last_name' => $lastName,
                     'email' => $email,
-                    'password' => password_hash($password, PASSWORD_DEFAULT),
+                    'password_hash' => password_hash($password, PASSWORD_DEFAULT),
                     'role' => 'student',
                     'status' => 'active'
                 ];
@@ -312,29 +313,29 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="first_name" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                    <label for="reg_first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="reg_first_name" name="first_name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="last_name" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                    <label for="reg_last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="reg_last_name" name="last_name" required>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
+                                <label for="reg_email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="reg_email" name="email" required>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                                <label for="reg_password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="reg_password" name="password" required minlength="6">
                                 <small class="form-text text-muted">Minimum 6 characters</small>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="confirm_password" class="form-label">Confirm Password</label>
-                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                <label for="reg_confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="reg_confirm_password" name="confirm_password" required>
                             </div>
                             
                             <button type="submit" class="btn btn-primary w-100">

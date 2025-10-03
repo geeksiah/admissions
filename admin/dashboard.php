@@ -646,61 +646,61 @@ if (!in_array($panel, $validPanels)) {
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'overview' ? 'active' : ''; ?>" href="#" data-panel="overview">
+                <a class="nav-link active" href="#" data-panel="overview">
                     <i class="bi bi-speedometer2"></i>
                     <span>Overview</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'applications' ? 'active' : ''; ?>" href="#" data-panel="applications">
+                <a class="nav-link" href="#" data-panel="applications">
                     <i class="bi bi-file-earmark-text"></i>
                     <span>Applications</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'students' ? 'active' : ''; ?>" href="#" data-panel="students">
+                <a class="nav-link" href="#" data-panel="students">
                     <i class="bi bi-people"></i>
                     <span>Students</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'programs' ? 'active' : ''; ?>" href="#" data-panel="programs">
+                <a class="nav-link" href="#" data-panel="programs">
                     <i class="bi bi-mortarboard"></i>
                     <span>Programs</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'users' ? 'active' : ''; ?>" href="#" data-panel="users">
+                <a class="nav-link" href="#" data-panel="users">
                     <i class="bi bi-person-gear"></i>
                     <span>Users</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'payments' ? 'active' : ''; ?>" href="#" data-panel="payments">
+                <a class="nav-link" href="#" data-panel="payments">
                     <i class="bi bi-credit-card"></i>
                     <span>Payments</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'reports' ? 'active' : ''; ?>" href="#" data-panel="reports">
+                <a class="nav-link" href="#" data-panel="reports">
                     <i class="bi bi-graph-up"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'communications' ? 'active' : ''; ?>" href="#" data-panel="communications">
+                <a class="nav-link" href="#" data-panel="communications">
                     <i class="bi bi-chat-dots"></i>
                     <span>Communications</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'settings' ? 'active' : ''; ?>" href="#" data-panel="settings">
+                <a class="nav-link" href="#" data-panel="settings">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo $panel === 'system' ? 'active' : ''; ?>" href="#" data-panel="system">
+                <a class="nav-link" href="#" data-panel="system">
                     <i class="bi bi-shield-check"></i>
                     <span>System</span>
                 </a>
@@ -800,24 +800,15 @@ if (!in_array($panel, $validPanels)) {
     <script>
         // Panel Navigation
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin dashboard DOM loaded');
+            
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
             
-            console.log('DOM loaded - Found elements:');
-            console.log('Nav links:', navLinks.length);
-            console.log('Panel contents:', panelContents.length);
+            console.log('Found nav links:', navLinks.length);
+            console.log('Found panel contents:', panelContents.length);
             console.log('Page title element:', pageTitle);
-            
-            // Log all found nav links
-            navLinks.forEach((link, index) => {
-                console.log(`Nav link ${index}:`, link.getAttribute('data-panel'));
-            });
-            
-            // Log all found panels
-            panelContents.forEach((panel, index) => {
-                console.log(`Panel ${index}:`, panel.id);
-            });
             
             // Panel titles mapping
             const panelTitles = {
