@@ -6,9 +6,15 @@ require_once 'classes/SecurityManager.php';
 $database = new Database();
 $security = new SecurityManager($database);
 
-// If user is not authenticated, redirect to login
+// If user is not authenticated, redirect to appropriate login
 if (!$security->isAuthenticated()) {
-    header('Location: login.php');
+    // Check if this is a student-related request
+    $currentPath = $_SERVER['REQUEST_URI'] ?? '';
+    if (strpos($currentPath, 'student') !== false) {
+        header('Location: student-login.php');
+    } else {
+        header('Location: login.php');
+    }
     exit();
 }
 ?>

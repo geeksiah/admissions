@@ -798,121 +798,33 @@ if (!in_array($panel, $validPanels)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        console.log('Admin dashboard script loaded');
-        
-        // Test if JavaScript is working
-        alert('JavaScript is working!');
-        
-        // Panel Navigation
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Admin dashboard DOM loaded');
-            
+            // Simple panel navigation
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
-            const panelContents = document.querySelectorAll('.panel-content');
-            const pageTitle = document.getElementById('pageTitle');
+            const panels = document.querySelectorAll('.panel-content');
             
-            console.log('Found nav links:', navLinks.length);
-            console.log('Found panel contents:', panelContents.length);
-            console.log('Page title element:', pageTitle);
-            
-            // Panel titles mapping
-            const panelTitles = {
-                'overview': 'Dashboard Overview',
-                'applications': 'Application Management',
-                'students': 'Student Management',
-                'programs': 'Program Management',
-                'users': 'User Management',
-                'payments': 'Payment Management',
-                'reports': 'Reports & Analytics',
-                'communications': 'Communications',
-                'settings': 'Settings',
-                'system': 'System Administration'
-            };
-            
-            // Function to show panel
-            function showPanel(panelName) {
-                console.log('=== showPanel called ===');
-                console.log('Panel name:', panelName);
-                console.log('Available navLinks:', navLinks.length);
-                console.log('Available panelContents:', panelContents.length);
-                
-                // Remove active class from all nav links
-                console.log('Removing active class from nav links...');
-                navLinks.forEach((nl, index) => {
-                    nl.classList.remove('active');
-                    console.log(`Nav link ${index} active class removed`);
-                });
-                
-                // Hide all panel contents
-                console.log('Hiding all panel contents...');
-                panelContents.forEach((panel, index) => {
-                    panel.classList.remove('active');
-                    console.log(`Panel ${index} (${panel.id}) active class removed`);
-                });
-                
-                // Show target panel
-                const targetPanelElement = document.getElementById(panelName + '-panel');
-                console.log('Target panel element:', targetPanelElement);
-                if (targetPanelElement) {
-                    targetPanelElement.classList.add('active');
-                    console.log('Panel activated successfully');
-                } else {
-                    console.error('Panel element not found:', panelName + '-panel');
-                }
-                
-                // Add active class to corresponding nav link
-                const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
-                console.log('Target nav link:', targetNavLink);
-                if (targetNavLink) {
-                    targetNavLink.classList.add('active');
-                    console.log('Nav link activated successfully');
-                } else {
-                    console.error('Nav link not found for panel:', panelName);
-                }
-                
-                // Update page title
-                if (panelTitles[panelName]) {
-                    pageTitle.textContent = panelTitles[panelName];
-                }
-                
-                // Update URL without page reload
-                const url = new URL(window.location);
-                url.searchParams.set('panel', panelName);
-                window.history.pushState({}, '', url);
-            }
-            
-            navLinks.forEach((link, index) => {
-                console.log(`Setting up click listener for nav link ${index}:`, link.getAttribute('data-panel'));
+            navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const targetPanel = this.getAttribute('data-panel');
-                    console.log('Nav link clicked:', targetPanel);
-                    showPanel(targetPanel);
-                });
-            });
-            
-            // Sidebar toggle for mobile
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('show');
-            });
-            
-            // Close sidebar when clicking outside on mobile
-            document.addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
-                    if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                        sidebar.classList.remove('show');
+                    const panelName = this.getAttribute('data-panel');
+                    
+                    // Hide all panels
+                    panels.forEach(panel => {
+                        panel.style.display = 'none';
+                        panel.classList.remove('active');
+                    });
+                    
+                    // Show selected panel
+                    const targetPanel = document.getElementById(panelName + '-panel');
+                    if (targetPanel) {
+                        targetPanel.style.display = 'block';
+                        targetPanel.classList.add('active');
                     }
-                }
-            });
-            
-            // Handle browser back/forward buttons
-            window.addEventListener('popstate', function(e) {
-                const urlParams = new URLSearchParams(window.location.search);
-                const panel = urlParams.get('panel') || 'overview';
-                showPanel(panel);
+                    
+                    // Update active nav link
+                    navLinks.forEach(nl => nl.classList.remove('active'));
+                    this.classList.add('active');
+                });
             });
             
             // Initialize Bootstrap dropdowns
@@ -920,11 +832,6 @@ if (!in_array($panel, $validPanels)) {
             var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
                 return new bootstrap.Dropdown(dropdownToggleEl);
             });
-            
-            // Initialize panel based on URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const initialPanel = urlParams.get('panel') || 'overview';
-            showPanel(initialPanel);
         });
     </script>
 </body>
