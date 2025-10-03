@@ -535,11 +535,25 @@ try {
         
         /* Panel Content - CRITICAL FOR SWITCHING */
         .panel-content {
-            display: none;
+            display: none !important;
         }
         
         .panel-content.active {
-            display: block;
+            display: block !important;
+        }
+        
+        /* Debug styles */
+        .nav-link[data-panel] {
+            cursor: pointer;
+        }
+        
+        .nav-link[data-panel]:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .nav-link[data-panel].active {
+            background-color: rgba(255,255,255,0.2);
+            font-weight: 600;
         }
     </style>
 </head>
@@ -778,9 +792,14 @@ try {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded, initializing navigation...');
+            
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
+            
+            console.log('Found nav links:', navLinks.length);
+            console.log('Found panel contents:', panelContents.length);
             
             const panelTitles = {
                 'overview': 'Dashboard Overview',
@@ -799,23 +818,33 @@ try {
             
             // Function to show panel (make it global)
             window.showPanel = function(panelName) {
+                console.log('Switching to panel:', panelName);
                 
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
                 
                 // Hide all panel contents
-                panelContents.forEach(panel => panel.classList.remove('active'));
+                panelContents.forEach(panel => {
+                    panel.classList.remove('active');
+                    panel.style.display = 'none';
+                });
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
                 if (targetPanelElement) {
+                    console.log('Found target panel element');
                     targetPanelElement.classList.add('active');
+                    targetPanelElement.style.display = 'block';
+                } else {
+                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
+                } else {
+                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -829,10 +858,12 @@ try {
                 window.history.pushState({}, '', url);
             };
             
-                navLinks.forEach(link => {
+            // Add click event listeners to navigation links
+            navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
+                    console.log('Navigation clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });
@@ -847,6 +878,7 @@ try {
             // Initialize panel based on URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const initialPanel = urlParams.get('panel') || 'overview';
+            console.log('Initializing with panel:', initialPanel);
             showPanel(initialPanel);
             
             // Mobile sidebar toggle
@@ -874,6 +906,8 @@ try {
                     });
                 });
             }
+            
+            console.log('Navigation initialization complete');
         });
     </script>
 </body>
