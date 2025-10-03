@@ -804,6 +804,21 @@ if (!in_array($panel, $validPanels)) {
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
             
+            console.log('DOM loaded - Found elements:');
+            console.log('Nav links:', navLinks.length);
+            console.log('Panel contents:', panelContents.length);
+            console.log('Page title element:', pageTitle);
+            
+            // Log all found nav links
+            navLinks.forEach((link, index) => {
+                console.log(`Nav link ${index}:`, link.getAttribute('data-panel'));
+            });
+            
+            // Log all found panels
+            panelContents.forEach((panel, index) => {
+                console.log(`Panel ${index}:`, panel.id);
+            });
+            
             // Panel titles mapping
             const panelTitles = {
                 'overview': 'Dashboard Overview',
@@ -820,6 +835,10 @@ if (!in_array($panel, $validPanels)) {
             
             // Function to show panel
             function showPanel(panelName) {
+                console.log('Attempting to show panel:', panelName);
+                console.log('Available navLinks:', navLinks.length);
+                console.log('Available panelContents:', panelContents.length);
+                
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
                 
@@ -828,14 +847,22 @@ if (!in_array($panel, $validPanels)) {
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
+                console.log('Target panel element:', targetPanelElement);
                 if (targetPanelElement) {
                     targetPanelElement.classList.add('active');
+                    console.log('Panel activated successfully');
+                } else {
+                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+                console.log('Target nav link:', targetNavLink);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
+                    console.log('Nav link activated successfully');
+                } else {
+                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -853,6 +880,7 @@ if (!in_array($panel, $validPanels)) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
+                    console.log('Nav link clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });

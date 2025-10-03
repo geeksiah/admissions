@@ -146,6 +146,16 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
             overflow: hidden;
             width: 100%;
             max-width: 480px;
+            min-height: fit-content;
+        }
+        
+        /* Dynamic width based on active tab */
+        .login-card.register-active {
+            max-width: 520px;
+        }
+        
+        .login-body.register-active {
+            padding: 1.5rem;
         }
         
         .login-header {
@@ -339,5 +349,34 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Handle dynamic container width based on active tab
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginCard = document.querySelector('.login-card');
+            const loginBody = document.querySelector('.login-body');
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            
+            function adjustContainer(isRegister) {
+                if (isRegister) {
+                    loginCard.classList.add('register-active');
+                    loginBody.classList.add('register-active');
+                } else {
+                    loginCard.classList.remove('register-active');
+                    loginBody.classList.remove('register-active');
+                }
+            }
+            
+            // Listen for tab changes
+            loginTab.addEventListener('shown.bs.tab', function() {
+                adjustContainer(false);
+            });
+            
+            registerTab.addEventListener('shown.bs.tab', function() {
+                adjustContainer(true);
+            });
+        });
+    </script>
 </body>
 </html>

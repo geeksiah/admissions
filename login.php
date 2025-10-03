@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // Redirect to appropriate dashboard
                         if (in_array($user['role'], ['admin', 'super_admin'])) {
-                            header('Location: admin/dashboard_working.php');
+                            header('Location: admin/dashboard.php');
                         } else {
                             header('Location: student/dashboard.php');
                         }

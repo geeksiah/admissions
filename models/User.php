@@ -62,6 +62,24 @@ class User {
     }
     
     /**
+     * Get user by email
+     */
+    public function getByEmail($email) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT id, username, email, first_name, last_name, role, department, phone, 
+                       created_at, updated_at, last_login, status 
+                FROM users WHERE email = ? AND status = 'active'
+            ");
+            $stmt->execute([$email]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            error_log("User getByEmail error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Get user by username or email
      */
     public function getByUsernameOrEmail($username) {
