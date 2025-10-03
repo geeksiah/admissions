@@ -23,6 +23,52 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'upload_avatar') {
                         <i class="bi bi-check-circle me-2"></i>Avatar updated successfully!
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                       </div>';
+                
+                // Add JavaScript to update avatar dynamically
+                echo '<script>
+                        setTimeout(function() {
+                            // Update avatar in profile section
+                            const profileContainer = document.querySelector(".card-body .mb-3");
+                            if (profileContainer) {
+                                // Check if there\'s already an img
+                                let profileImg = profileContainer.querySelector("img");
+                                if (profileImg) {
+                                    profileImg.src = "../' . $avatarPath . '?t=' . time() . '";
+                                } else {
+                                    // Replace initials div with img
+                                    const initialsDiv = profileContainer.querySelector(".rounded-circle");
+                                    if (initialsDiv) {
+                                        initialsDiv.outerHTML = \'<img src="../' . $avatarPath . '?t=' . time() . '" alt="Profile Picture" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">\';
+                                    }
+                                }
+                            }
+                            
+                            // Update avatar in top bar - convert initials to image
+                            const topBarAvatar = document.querySelector(".user-avatar");
+                            if (topBarAvatar) {
+                                // Check if it already has an img
+                                let topBarImg = topBarAvatar.querySelector("img");
+                                if (topBarImg) {
+                                    topBarImg.src = "../' . $avatarPath . '?t=' . time() . '";
+                                } else {
+                                    // Convert initials to image
+                                    const currentContent = topBarAvatar.innerHTML;
+                                    topBarAvatar.innerHTML = \'<img src="../' . $avatarPath . '?t=' . time() . '" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">\';
+                                }
+                            }
+                            
+                            // Also update any other avatar instances
+                            const allAvatars = document.querySelectorAll("[data-bs-toggle=\\"dropdown\\"]");
+                            allAvatars.forEach(avatar => {
+                                if (avatar.classList.contains("user-avatar")) {
+                                    const img = avatar.querySelector("img");
+                                    if (img) {
+                                        img.src = "../' . $avatarPath . '?t=' . time() . '";
+                                    }
+                                }
+                            });
+                        }, 500);
+                      </script>';
             } else {
                 echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <i class="bi bi-exclamation-circle me-2"></i>Failed to upload avatar. Please try again.

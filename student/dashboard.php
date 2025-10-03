@@ -60,7 +60,6 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>console.log('HTML head loading');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - <?php echo APP_NAME; ?></title>
@@ -645,16 +644,10 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        console.log('Script tag loaded - before DOMContentLoaded');
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Student dashboard JavaScript loaded');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
-            
-            console.log('Found nav links:', navLinks.length);
-            console.log('Found panel contents:', panelContents.length);
-            console.log('Page title element:', pageTitle);
             
             const panelTitles = {
                 'overview': 'Student Dashboard',
@@ -666,7 +659,6 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             
             // Function to show panel (make it global)
             window.showPanel = function(panelName) {
-                console.log('showPanel called with:', panelName);
                 
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
@@ -676,20 +668,14 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
-                console.log('Target panel element:', targetPanelElement);
                 if (targetPanelElement) {
                     targetPanelElement.classList.add('active');
-                } else {
-                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
-                console.log('Target nav link:', targetNavLink);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
-                } else {
-                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -703,11 +689,10 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 window.history.pushState({}, '', url);
             };
             
-            navLinks.forEach(link => {
+                navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
-                    console.log('Nav link clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });
@@ -722,7 +707,6 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             // Initialize panel based on URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const initialPanel = urlParams.get('panel') || 'overview';
-            console.log('Loading initial panel:', initialPanel);
             showPanel(initialPanel);
             
             // Mobile sidebar toggle
@@ -873,6 +857,5 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             return date.toLocaleDateString();
         }
     </script>
-    <script>console.log('End of page reached');</script>
 </body>
 </html>

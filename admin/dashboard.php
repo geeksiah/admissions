@@ -73,7 +73,6 @@ try {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>console.log('HTML head loading');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo APP_NAME; ?> - Admin Dashboard</title>
@@ -556,7 +555,7 @@ try {
                 <?php endif; ?>
             </div>
             <h4 class="sidebar-title"><?php echo APP_NAME; ?></h4>
-        </div>
+                </div>
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
@@ -641,7 +640,7 @@ try {
             <div class="header-left">
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="bi bi-list"></i>
-                </button>
+                        </button>
                 <h5 class="page-title" id="pageTitle">Dashboard Overview</h5>
             </div>
             
@@ -668,45 +667,89 @@ try {
             <div class="panel-content active" id="overview-panel">
                 <?php // include 'panels/overview.php'; ?>
                 <div class="alert alert-success">
-                    <h4>Test Panel Loaded Successfully!</h4>
-                    <p>If you can see this, the basic panel system is working.</p>
+                    <h4>Dashboard Overview</h4>
+                    <p>Welcome to the admin dashboard. Navigation should be working now.</p>
                     <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
+
+                <!-- Quick Stats -->
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number"><?php echo $stats['total_applications'] ?? 0; ?></div>
+                                <div class="stat-label">Total Applications</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number"><?php echo $stats['total_students'] ?? 0; ?></div>
+                                <div class="stat-label">Total Students</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-mortarboard"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number"><?php echo $stats['total_programs'] ?? 0; ?></div>
+                                <div class="stat-label">Active Programs</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number"><?php echo $stats['pending_payments'] ?? 0; ?></div>
+                                <div class="stat-label">Pending Payments</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <?php // include 'panels/applications.php'; ?>
-                <div class="alert alert-info">
-                    <h4>Applications Panel</h4>
-                    <p>This panel would show applications management.</p>
-                </div>
-            </div>
+                <?php include 'panels/applications.php'; ?>
+        </div>
             
             <!-- Students Panel -->
             <div class="panel-content" id="students-panel">
                 <?php include 'panels/students.php'; ?>
-            </div>
-            
+    </div>
+
             <!-- Programs Panel -->
             <div class="panel-content" id="programs-panel">
                 <?php include 'panels/programs.php'; ?>
-            </div>
+                </div>
             
             <!-- Application Forms Panel -->
             <div class="panel-content" id="application_forms-panel">
                 <?php include 'panels/application_forms.php'; ?>
-            </div>
+                        </div>
             
             <!-- Users Panel -->
             <div class="panel-content" id="users-panel">
                 <?php include 'panels/users.php'; ?>
-            </div>
+                        </div>
             
             <!-- Payments Panel -->
             <div class="panel-content" id="payments-panel">
                 <?php include 'panels/payments.php'; ?>
-            </div>
+                </div>
             
             <!-- Reports Panel -->
             <div class="panel-content" id="reports-panel">
@@ -715,41 +758,34 @@ try {
             
             <!-- Notifications Panel -->
             <div class="panel-content" id="notifications-panel">
-                <?php // include 'panels/notifications.php'; ?>
-                <div class="alert alert-info">Notifications panel temporarily disabled for debugging</div>
-            </div>
-            
+                <?php include 'panels/notifications.php'; ?>
+        </div>
+
             <!-- Communications Panel -->
             <div class="panel-content" id="communications-panel">
                 <?php include 'panels/communications.php'; ?>
             </div>
-            
+
             <!-- Settings Panel -->
             <div class="panel-content" id="settings-panel">
                 <?php include 'panels/settings.php'; ?>
             </div>
-            
+
             <!-- System Panel -->
             <div class="panel-content" id="system-panel">
                 <?php include 'panels/system.php'; ?>
-            </div>
         </div>
     </div>
+</div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        console.log('Script tag loaded - before DOMContentLoaded');
+
+<script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Admin dashboard JavaScript loaded');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
-            
-            console.log('Found nav links:', navLinks.length);
-            console.log('Found panel contents:', panelContents.length);
-            console.log('Page title element:', pageTitle);
             
             const panelTitles = {
                 'overview': 'Dashboard Overview',
@@ -768,7 +804,6 @@ try {
             
             // Function to show panel (make it global)
             window.showPanel = function(panelName) {
-                console.log('showPanel called with:', panelName);
                 
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
@@ -778,20 +813,14 @@ try {
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
-                console.log('Target panel element:', targetPanelElement);
                 if (targetPanelElement) {
                     targetPanelElement.classList.add('active');
-                } else {
-                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
-                console.log('Target nav link:', targetNavLink);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
-                } else {
-                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -805,11 +834,10 @@ try {
                 window.history.pushState({}, '', url);
             };
             
-            navLinks.forEach(link => {
+                navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
-                    console.log('Nav link clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });
@@ -824,7 +852,6 @@ try {
             // Initialize panel based on URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const initialPanel = urlParams.get('panel') || 'overview';
-            console.log('Loading initial panel:', initialPanel);
             showPanel(initialPanel);
             
             // Mobile sidebar toggle
@@ -854,6 +881,5 @@ try {
             }
         });
     </script>
-    <script>console.log('End of page reached');</script>
 </body>
 </html>
