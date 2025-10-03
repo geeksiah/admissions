@@ -798,6 +798,11 @@ if (!in_array($panel, $validPanels)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        console.log('Admin dashboard script loaded');
+        
+        // Test if JavaScript is working
+        alert('JavaScript is working!');
+        
         // Panel Navigation
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Admin dashboard DOM loaded');

@@ -8,7 +8,8 @@ $security = new SecurityManager($database);
 
 // If user is not authenticated, redirect to login
 if (!$security->isAuthenticated()) {
-    $security->redirectToLogin();
+    header('Location: login.php');
+    exit();
 }
 ?>
 <!DOCTYPE html>
