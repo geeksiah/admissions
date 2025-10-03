@@ -1,12 +1,11 @@
 <?php
 /**
  * System Configuration Model
- * Manages system-wide configuration settings
+ * Handles system settings and configuration
  */
 
 class SystemConfig {
     private $db;
-    private $cache = [];
     
     public function __construct($database) {
         // Handle both Database object and PDO connection
@@ -18,289 +17,185 @@ class SystemConfig {
     }
     
     /**
-     * Get configuration value by key
+     * Get configuration by category
      */
-    public function get($key, $default = null) {
-        // Check cache first
-        if (isset($this->cache[$key])) {
-            return $this->cache[$key];
-        }
-        
+    public function getByCategory($category) {
         try {
             $stmt = $this->db->prepare("
-                SELECT config_value, config_type 
+                SELECT config_key, config_value 
                 FROM system_config 
-                WHERE config_key = ?
+                WHERE category = ?
             ");
-            $stmt->execute([$key]);
-            $result = $stmt->fetch();
+            $stmt->execute([$category]);
+            $results = $stmt->fetchAll();
             
-            if ($result) {
-                $value = $this->castValue($result['config_value'], $result['config_type']);
-                $this->cache[$key] = $value;
-                return $value;
+            $config = [];
+            foreach ($results as $row) {
+                $config[$row['config_key']] = $row['config_value'];
             }
             
-            return $default;
+            return $config;
         } catch (Exception $e) {
-            error_log("SystemConfig get error: " . $e->getMessage());
-            return $default;
+            error_log("System config error: " . $e->getMessage());
+            return [];
         }
     }
     
     /**
      * Set configuration value
      */
-    public function set($key, $value, $type = 'string', $description = null, $isPublic = false, $updatedBy = null) {
+    public function set($category, $key, $value) {
         try {
-            $this->db->beginTransaction();
-            
             $stmt = $this->db->prepare("
-                INSERT INTO system_config (config_key, config_value, config_type, description, is_public, updated_by)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                config_value = VALUES(config_value),
-                config_type = VALUES(config_type),
-                description = COALESCE(VALUES(description), description),
-                is_public = VALUES(is_public),
-                updated_by = VALUES(updated_by),
-                updated_at = CURRENT_TIMESTAMP
+                INSERT INTO system_config (category, config_key, config_value, updated_at) 
+                VALUES (?, ?, ?, NOW()) 
+                ON DUPLICATE KEY UPDATE 
+                config_value = VALUES(config_value), 
+                updated_at = NOW()
             ");
-            
-            $result = $stmt->execute([
-                $key,
-                $this->formatValue($value, $type),
-                $type,
-                $description,
-                $isPublic ? 1 : 0,
-                $updatedBy
-            ]);
-            
-            if ($result) {
-                // Update cache
-                $this->cache[$key] = $value;
-                $this->db->commit();
-                return true;
-            } else {
-                $this->db->rollback();
-                return false;
-            }
+            return $stmt->execute([$category, $key, $value]);
         } catch (Exception $e) {
-            $this->db->rollback();
-            error_log("SystemConfig set error: " . $e->getMessage());
+            error_log("System config set error: " . $e->getMessage());
             return false;
         }
     }
     
     /**
-     * Get all configuration settings
+     * Get all configuration
      */
-    public function getAll($publicOnly = false) {
+    public function getAll() {
         try {
-            $sql = "SELECT * FROM system_config";
-            $params = [];
-            
-            if ($publicOnly) {
-                $sql .= " WHERE is_public = 1";
-            }
-            
-            $sql .= " ORDER BY config_key";
-            
-            $stmt = $this->db->getConnection()->prepare($sql);
-            $stmt->execute($params);
-            $results = $stmt->fetchAll();
-            
-            $config = [];
-            foreach ($results as $row) {
-                $config[$row['config_key']] = [
-                    'value' => $this->castValue($row['config_value'], $row['config_type']),
-                    'type' => $row['config_type'],
-                    'description' => $row['description'],
-                    'is_public' => (bool)$row['is_public'],
-                    'updated_at' => $row['updated_at']
-                ];
-            }
-            
-            return $config;
+            $stmt = $this->db->prepare("
+                SELECT category, config_key, config_value, updated_at 
+                FROM system_config 
+                ORDER BY category, config_key
+            ");
+            $stmt->execute();
+            return $stmt->fetchAll();
         } catch (Exception $e) {
-            error_log("SystemConfig getAll error: " . $e->getMessage());
+            error_log("System config get all error: " . $e->getMessage());
             return [];
         }
     }
     
     /**
-     * Get public configuration settings
+     * Delete configuration
      */
-    public function getPublic() {
-        return $this->getAll(true);
-    }
-    
-    /**
-     * Delete configuration setting
-     */
-    public function delete($key) {
+    public function delete($category, $key) {
         try {
             $stmt = $this->db->prepare("
-                DELETE FROM system_config WHERE config_key = ?
+                DELETE FROM system_config 
+                WHERE category = ? AND config_key = ?
             ");
-            $result = $stmt->execute([$key]);
-            
-            if ($result) {
-                // Remove from cache
-                unset($this->cache[$key]);
-                return true;
-            }
-            
-            return false;
+            return $stmt->execute([$category, $key]);
         } catch (Exception $e) {
-            error_log("SystemConfig delete error: " . $e->getMessage());
+            error_log("System config delete error: " . $e->getMessage());
             return false;
         }
     }
     
     /**
-     * Check if application access requires voucher
+     * Get branding settings
      */
-    public function isVoucherRequired() {
-        return $this->get('voucher_required_for_application', false);
-    }
-    
-    /**
-     * Get application access mode
-     */
-    public function getApplicationAccessMode() {
-        return $this->get('application_access_mode', 'payment');
-    }
-    
-    /**
-     * Check if payment is enabled
-     */
-    public function isPaymentEnabled() {
-        return $this->get('payment_enabled', true);
-    }
-    
-    /**
-     * Check if voucher system is enabled
-     */
-    public function isVoucherSystemEnabled() {
-        return $this->get('voucher_system_enabled', true);
-    }
-    
-    /**
-     * Check if multiple fee structure is enabled
-     */
-    public function isMultipleFeeStructureEnabled() {
-        return $this->get('multiple_fee_structure', false);
-    }
-    
-    /**
-     * Get default application fee
-     */
-    public function getDefaultApplicationFee() {
-        return (float)$this->get('application_fee_default', 50.00);
-    }
-    
-    /**
-     * Get maximum file upload size
-     */
-    public function getMaxFileUploadSize() {
-        return (int)$this->get('max_file_upload_size', 10485760);
-    }
-    
-    /**
-     * Get allowed file types
-     */
-    public function getAllowedFileTypes() {
-        $types = $this->get('allowed_file_types', 'pdf,doc,docx,jpg,jpeg,png');
-        return explode(',', $types);
-    }
-    
-    /**
-     * Check if email notifications are enabled
-     */
-    public function isEmailNotificationsEnabled() {
-        return $this->get('email_notifications_enabled', true);
-    }
-    
-    /**
-     * Check if SMS notifications are enabled
-     */
-    public function isSMSNotificationsEnabled() {
-        return $this->get('sms_notifications_enabled', false);
-    }
-    
-    /**
-     * Get application deadline reminder days
-     */
-    public function getApplicationDeadlineReminderDays() {
-        $days = $this->get('application_deadline_reminder_days', '7,3,1');
-        return array_map('intval', explode(',', $days));
-    }
-    
-    /**
-     * Get payment reminder days
-     */
-    public function getPaymentReminderDays() {
-        $days = $this->get('payment_reminder_days', '7,3,1');
-        return array_map('intval', explode(',', $days));
-    }
-    
-    /**
-     * Cast value to appropriate type
-     */
-    private function castValue($value, $type) {
-        switch ($type) {
-            case 'boolean':
-                return filter_var($value, FILTER_VALIDATE_BOOLEAN);
-            case 'integer':
-                return (int)$value;
-            case 'json':
-                return json_decode($value, true);
-            case 'array':
-                return explode(',', $value);
-            default:
-                return $value;
-        }
-    }
-    
-    /**
-     * Format value for storage
-     */
-    private function formatValue($value, $type) {
-        switch ($type) {
-            case 'boolean':
-                return $value ? 'true' : 'false';
-            case 'json':
-                return json_encode($value);
-            case 'array':
-                return is_array($value) ? implode(',', $value) : $value;
-            default:
-                return (string)$value;
-        }
-    }
-    
-    /**
-     * Clear cache
-     */
-    public function clearCache() {
-        $this->cache = [];
-    }
-    
-    /**
-     * Get configuration for admin interface
-     */
-    public function getAdminConfig() {
-        return [
-            'application_access_mode' => $this->getApplicationAccessMode(),
-            'voucher_required_for_application' => $this->isVoucherRequired(),
-            'payment_enabled' => $this->isPaymentEnabled(),
-            'voucher_system_enabled' => $this->isVoucherSystemEnabled(),
-            'multiple_fee_structure' => $this->isMultipleFeeStructureEnabled(),
-            'email_notifications_enabled' => $this->isEmailNotificationsEnabled(),
-            'sms_notifications_enabled' => $this->isSMSNotificationsEnabled(),
-            'default_application_fee' => $this->getDefaultApplicationFee(),
-            'max_file_upload_size' => $this->getMaxFileUploadSize(),
-            'allowed_file_types' => $this->getAllowedFileTypes()
+    public function getBrandingSettings() {
+        $branding = $this->getByCategory('branding');
+        
+        // Set defaults if not exists
+        $defaults = [
+            'logo_url' => null,
+            'primary_color' => '#667eea',
+            'secondary_color' => '#764ba2',
+            'institution_name' => APP_NAME,
+            'institution_address' => '',
+            'institution_phone' => '',
+            'institution_email' => '',
+            'institution_website' => ''
         ];
+        
+        return array_merge($defaults, $branding);
+    }
+    
+    /**
+     * Save branding settings
+     */
+    public function saveBrandingSettings($settings) {
+        $success = true;
+        
+        foreach ($settings as $key => $value) {
+            if (!$this->set('branding', $key, $value)) {
+                $success = false;
+            }
+        }
+        
+        return $success;
+    }
+    
+    /**
+     * Get email settings
+     */
+    public function getEmailSettings() {
+        $email = $this->getByCategory('email');
+        
+        $defaults = [
+            'smtp_host' => 'localhost',
+            'smtp_port' => '587',
+            'smtp_username' => '',
+            'smtp_password' => '',
+            'smtp_encryption' => 'tls',
+            'from_email' => 'noreply@university.edu',
+            'from_name' => APP_NAME
+        ];
+        
+        return array_merge($defaults, $email);
+    }
+    
+    /**
+     * Save email settings
+     */
+    public function saveEmailSettings($settings) {
+        $success = true;
+        
+        foreach ($settings as $key => $value) {
+            if (!$this->set('email', $key, $value)) {
+                $success = false;
+            }
+        }
+        
+        return $success;
+    }
+    
+    /**
+     * Get payment settings
+     */
+    public function getPaymentSettings() {
+        $payment = $this->getByCategory('payment');
+        
+        $defaults = [
+            'currency' => 'USD',
+            'paystack_public_key' => '',
+            'paystack_secret_key' => '',
+            'flutterwave_public_key' => '',
+            'flutterwave_secret_key' => '',
+            'stripe_public_key' => '',
+            'stripe_secret_key' => ''
+        ];
+        
+        return array_merge($defaults, $payment);
+    }
+    
+    /**
+     * Save payment settings
+     */
+    public function savePaymentSettings($settings) {
+        $success = true;
+        
+        foreach ($settings as $key => $value) {
+            if (!$this->set('payment', $key, $value)) {
+                $success = false;
+            }
+        }
+        
+        return $success;
     }
 }
+?>

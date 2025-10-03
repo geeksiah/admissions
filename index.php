@@ -59,10 +59,10 @@ if (!$currentUser) {
 // Redirect based on user role
 $role = $currentUser['role'] ?? '';
 switch ($role) {
-    case 'admin':
-    case 'super_admin':
-        header('Location: admin/dashboard_absolute.php');
-        break;
+        case 'admin':
+        case 'super_admin':
+            header('Location: admin/dashboard.php');
+            break;
     case 'student':
         header('Location: student/dashboard.php');
         break;

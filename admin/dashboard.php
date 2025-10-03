@@ -1,356 +1,718 @@
 <?php
 /**
- * Admin Dashboard
+ * Unified Admin Dashboard - Single Page Application
+ * Professional UI with panel-based navigation
  */
 
-session_start();
 require_once '../config/config.php';
 require_once '../config/database.php';
-require_once '../classes/Security.php';
+require_once '../classes/SecurityManager.php';
+
+$database = new Database();
+$security = new SecurityManager($database);
+
+// Require admin authentication
+$security->requireAdmin();
+
+// Get current user info
+$currentUser = $security->getCurrentUser();
+
+// Initialize models
 require_once '../models/User.php';
-require_once '../models/Application.php';
 require_once '../models/Student.php';
+require_once '../models/Application.php';
 require_once '../models/Program.php';
 require_once '../models/Payment.php';
 require_once '../models/Report.php';
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'super_admin'])) {
-    header('Location: ../login.php');
-    exit;
-}
-
-$database = new Database();
 $pdo = $database->getConnection();
-
-$security = new Security($database);
 $userModel = new User($pdo);
-$applicationModel = new Application($pdo);
 $studentModel = new Student($pdo);
+$applicationModel = new Application($pdo);
 $programModel = new Program($pdo);
 $paymentModel = new Payment($pdo);
 $reportModel = new Report($pdo);
 
-// Get current user data
-$currentUser = $userModel->getById($_SESSION['user_id']);
+// Get dashboard data
+try {
+    $stats = $reportModel->getDashboardStats();
+    $recentApplications = $applicationModel->getRecent(5);
+    $recentStudents = $studentModel->getRecent(5);
+    $activePrograms = $programModel->getActive();
+    $popularPrograms = $programModel->getPopular(5);
+} catch (Exception $e) {
+    $stats = [
+        'total_applications' => 0,
+        'pending_applications' => 0,
+        'approved_applications' => 0,
+        'rejected_applications' => 0,
+        'under_review_applications' => 0
+    ];
+    $recentApplications = [];
+    $recentStudents = [];
+    $activePrograms = [];
+    $popularPrograms = [];
+}
 
-// Get dashboard statistics
-$stats = $reportModel->getDashboardStats();
+// Get branding settings
+$brandingSettings = [];
+try {
+    require_once '../models/SystemConfig.php';
+    $configModel = new SystemConfig($pdo);
+    $brandingSettings = $configModel->getByCategory('branding');
+} catch (Exception $e) {
+    // Use defaults
+    $brandingSettings = [
+        'logo_url' => null,
+        'primary_color' => '#667eea',
+        'secondary_color' => '#764ba2'
+    ];
+}
 
-// Get recent applications
-$recentApplications = $applicationModel->getRecent(10);
+// Determine current panel
+$panel = $_GET['panel'] ?? 'overview';
+$validPanels = [
+    'overview', 'applications', 'students', 'programs', 'users', 
+    'reports', 'settings', 'payments', 'communications', 'system'
+];
 
-// Get pending documents
-$pendingDocuments = $applicationModel->getPendingDocuments(5);
-
-// Get payment statistics
-$paymentStats = $paymentModel->getStatistics();
-
-// Get popular programs
-$popularPrograms = $programModel->getPopular(5);
-
-// Get application trends (last 30 days)
-$applicationTrends = $reportModel->getApplicationTrends(30);
-
-include '../includes/header.php';
+if (!in_array($panel, $validPanels)) {
+    $panel = 'overview';
+}
 ?>
-
-<div class="container-fluid">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0">Dashboard</h1>
-                    <p class="text-muted">Welcome back, <?php echo htmlspecialchars($currentUser['full_name']); ?>!</p>
-                </div>
-                <div>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-primary" onclick="refreshDashboard()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>
-                            Refresh
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="exportDashboard()">
-                            <i class="bi bi-download me-2"></i>
-                            Export Report
-                        </button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo APP_NAME; ?> - Admin Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: <?php echo $brandingSettings['primary_color'] ?? '#667eea'; ?>;
+            --secondary-color: <?php echo $brandingSettings['secondary_color'] ?? '#764ba2'; ?>;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            margin: 0 auto 1rem;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .sidebar-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+        
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        
+        .nav-item {
+            margin: 0.25rem 0;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.5rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 0;
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .nav-link.active {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .nav-link span {
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        
+        /* Header */
+        .top-header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+            margin-right: 1rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-dropdown {
+            position: relative;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* Content Area */
+        .content-wrapper {
+            padding: 2rem;
+        }
+        
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #f1f5f9;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 1.5rem;
+        }
+        
+        .card-title {
+            margin: 0;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Statistics Cards */
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stat-card.bg-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .stat-card.bg-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .stat-card.bg-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .stat-card.bg-info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        
+        /* Tables */
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #475569;
+            padding: 1rem;
+        }
+        
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-wrapper {
+                padding: 1rem;
+            }
+        }
+        
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Panel Content */
+        .panel-content {
+            display: none;
+        }
+        
+        .panel-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <?php if (!empty($brandingSettings['logo_url'])): ?>
+                    <img src="<?php echo htmlspecialchars($brandingSettings['logo_url']); ?>" alt="Logo">
+                <?php else: ?>
+                    <i class="bi bi-mortarboard-fill"></i>
+                <?php endif; ?>
+            </div>
+            <h4 class="sidebar-title"><?php echo APP_NAME; ?></h4>
+        </div>
+        
+        <ul class="nav flex-column sidebar-nav">
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'overview' ? 'active' : ''; ?>" href="#" data-panel="overview">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Overview</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'applications' ? 'active' : ''; ?>" href="#" data-panel="applications">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Applications</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'students' ? 'active' : ''; ?>" href="#" data-panel="students">
+                    <i class="bi bi-people"></i>
+                    <span>Students</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'programs' ? 'active' : ''; ?>" href="#" data-panel="programs">
+                    <i class="bi bi-mortarboard"></i>
+                    <span>Programs</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'users' ? 'active' : ''; ?>" href="#" data-panel="users">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'payments' ? 'active' : ''; ?>" href="#" data-panel="payments">
+                    <i class="bi bi-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'reports' ? 'active' : ''; ?>" href="#" data-panel="reports">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'communications' ? 'active' : ''; ?>" href="#" data-panel="communications">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Communications</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'settings' ? 'active' : ''; ?>" href="#" data-panel="settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $panel === 'system' ? 'active' : ''; ?>" href="#" data-panel="system">
+                    <i class="bi bi-shield-check"></i>
+                    <span>System</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h5 class="page-title" id="pageTitle">Dashboard Overview</h5>
+            </div>
+            
+            <div class="header-right">
+                <div class="user-dropdown">
+                    <div class="user-avatar" data-bs-toggle="dropdown">
+                        <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
                     </div>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header"><?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?></h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-panel="settings"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#" data-panel="settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
                 </div>
+            </div>
+        </header>
+        
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <!-- Overview Panel -->
+            <div class="panel-content <?php echo $panel === 'overview' ? 'active' : ''; ?>" id="overview-panel">
+                <?php include 'panels/overview.php'; ?>
+            </div>
+            
+            <!-- Applications Panel -->
+            <div class="panel-content <?php echo $panel === 'applications' ? 'active' : ''; ?>" id="applications-panel">
+                <?php include 'panels/applications.php'; ?>
+            </div>
+            
+            <!-- Students Panel -->
+            <div class="panel-content <?php echo $panel === 'students' ? 'active' : ''; ?>" id="students-panel">
+                <?php include 'panels/students.php'; ?>
+            </div>
+            
+            <!-- Programs Panel -->
+            <div class="panel-content <?php echo $panel === 'programs' ? 'active' : ''; ?>" id="programs-panel">
+                <?php include 'panels/programs.php'; ?>
+            </div>
+            
+            <!-- Users Panel -->
+            <div class="panel-content <?php echo $panel === 'users' ? 'active' : ''; ?>" id="users-panel">
+                <?php include 'panels/users.php'; ?>
+            </div>
+            
+            <!-- Payments Panel -->
+            <div class="panel-content <?php echo $panel === 'payments' ? 'active' : ''; ?>" id="payments-panel">
+                <?php include 'panels/payments.php'; ?>
+            </div>
+            
+            <!-- Reports Panel -->
+            <div class="panel-content <?php echo $panel === 'reports' ? 'active' : ''; ?>" id="reports-panel">
+                <?php include 'panels/reports.php'; ?>
+            </div>
+            
+            <!-- Communications Panel -->
+            <div class="panel-content <?php echo $panel === 'communications' ? 'active' : ''; ?>" id="communications-panel">
+                <?php include 'panels/communications.php'; ?>
+            </div>
+            
+            <!-- Settings Panel -->
+            <div class="panel-content <?php echo $panel === 'settings' ? 'active' : ''; ?>" id="settings-panel">
+                <?php include 'panels/settings.php'; ?>
+            </div>
+            
+            <!-- System Panel -->
+            <div class="panel-content <?php echo $panel === 'system' ? 'active' : ''; ?>" id="system-panel">
+                <?php include 'panels/system.php'; ?>
             </div>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Applications
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo number_format($stats['total_applications']); ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Approved Applications
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo number_format($stats['approved_applications']); ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-check-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Pending Review
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo number_format($stats['pending_applications']); ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Total Revenue
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo APP_CURRENCY . ' ' . number_format($paymentStats['total_revenue'], 2); ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Recent Applications -->
-        <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Applications</h6>
-                    <a href="applications.php" class="btn btn-sm btn-primary">View All</a>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($recentApplications)): ?>
-                        <div class="text-center py-4">
-                            <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">No Applications Yet</h5>
-                            <p class="text-muted">Applications will appear here as they are submitted.</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-bordered" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Application ID</th>
-                                        <th>Student Name</th>
-                                        <th>Program</th>
-                                        <th>Status</th>
-                                        <th>Submitted</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($recentApplications as $app): ?>
-                                        <tr>
-                                            <td>
-                                                <strong><?php echo htmlspecialchars($app['application_id']); ?></strong>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($app['program_name']); ?></td>
-                                            <td>
-                                                <span class="badge bg-<?php echo getStatusColor($app['status']); ?>">
-                                                    <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo date('M j, Y', strtotime($app['submitted_at'])); ?></td>
-                                            <td>
-                                                <a href="applications.php?id=<?php echo $app['id']; ?>" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions & Stats -->
-        <div class="col-lg-4">
-            <!-- Quick Actions -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="applications.php" class="btn btn-primary">
-                            <i class="bi bi-list-ul me-2"></i>
-                            Review Applications
-                        </a>
-                        <a href="students.php" class="btn btn-outline-primary">
-                            <i class="bi bi-people me-2"></i>
-                            Manage Students
-                        </a>
-                        <a href="programs.php" class="btn btn-outline-primary">
-                            <i class="bi bi-book me-2"></i>
-                            Manage Programs
-                        </a>
-                        <a href="reports.php" class="btn btn-outline-primary">
-                            <i class="bi bi-graph-up me-2"></i>
-                            View Reports
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pending Documents -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-warning">Pending Documents</h6>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($pendingDocuments)): ?>
-                        <div class="text-center py-3">
-                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                            <p class="text-muted mt-2 mb-0">No pending documents</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($pendingDocuments as $doc): ?>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <small class="font-weight-bold"><?php echo htmlspecialchars($doc['requirement_name']); ?></small>
-                                    <br>
-                                    <small class="text-muted"><?php echo htmlspecialchars($doc['first_name'] . ' ' . $doc['last_name']); ?></small>
-                                </div>
-                                <a href="documents.php?id=<?php echo $doc['id']; ?>" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </div>
-                        <?php endforeach; ?>
-                        <div class="text-center mt-3">
-                            <a href="documents.php" class="btn btn-sm btn-outline-warning">View All</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Popular Programs -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-info">Popular Programs</h6>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($popularPrograms)): ?>
-                        <div class="text-center py-3">
-                            <i class="bi bi-book text-muted" style="font-size: 2rem;"></i>
-                            <p class="text-muted mt-2 mb-0">No programs yet</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($popularPrograms as $program): ?>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <small class="font-weight-bold"><?php echo htmlspecialchars($program['program_name']); ?></small>
-                                    <br>
-                                    <small class="text-muted"><?php echo $program['application_count']; ?> applications</small>
-                                </div>
-                                <span class="badge bg-info"><?php echo $program['level_name']; ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function refreshDashboard() {
-    location.reload();
-}
-
-function exportDashboard() {
-    // Implementation for exporting dashboard data
-    window.open('reports.php?export=dashboard', '_blank');
-}
-
-// Auto-refresh every 5 minutes
-setInterval(function() {
-    // Refresh only the statistics cards
-    fetch('api/dashboard-stats.php')
-        .then(response => response.json())
-        .then(data => {
-            // Update statistics
-            document.querySelector('.card.border-left-primary .h5').textContent = data.total_applications.toLocaleString();
-            document.querySelector('.card.border-left-success .h5').textContent = data.approved_applications.toLocaleString();
-            document.querySelector('.card.border-left-warning .h5').textContent = data.pending_applications.toLocaleString();
-            document.querySelector('.card.border-left-info .h5').textContent = APP_CURRENCY + ' ' + data.total_revenue.toLocaleString();
-        })
-        .catch(error => console.error('Error refreshing dashboard:', error));
-}, 300000); // 5 minutes
-</script>
-
-<?php
-function getStatusColor($status) {
-    switch ($status) {
-        case 'approved':
-            return 'success';
-        case 'rejected':
-            return 'danger';
-        case 'under_review':
-            return 'info';
-        case 'pending':
-            return 'warning';
-        default:
-            return 'secondary';
-    }
-}
-
-include '../includes/footer.php';
-?>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Panel Navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            const panelContents = document.querySelectorAll('.panel-content');
+            const pageTitle = document.getElementById('pageTitle');
+            
+            // Panel titles mapping
+            const panelTitles = {
+                'overview': 'Dashboard Overview',
+                'applications': 'Application Management',
+                'students': 'Student Management',
+                'programs': 'Program Management',
+                'users': 'User Management',
+                'payments': 'Payment Management',
+                'reports': 'Reports & Analytics',
+                'communications': 'Communications',
+                'settings': 'Settings',
+                'system': 'System Administration'
+            };
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetPanel = this.getAttribute('data-panel');
+                    
+                    // Update URL without page reload
+                    const url = new URL(window.location);
+                    url.searchParams.set('panel', targetPanel);
+                    window.history.pushState({}, '', url);
+                    
+                    // Remove active class from all nav links
+                    navLinks.forEach(nl => nl.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Hide all panel contents
+                    panelContents.forEach(panel => panel.classList.remove('active'));
+                    
+                    // Show target panel
+                    const targetPanelElement = document.getElementById(targetPanel + '-panel');
+                    if (targetPanelElement) {
+                        targetPanelElement.classList.add('active');
+                    }
+                    
+                    // Update page title
+                    if (panelTitles[targetPanel]) {
+                        pageTitle.textContent = panelTitles[targetPanel];
+                    }
+                });
+            });
+            
+            // Sidebar toggle for mobile
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            });
+        });
+        
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const panel = urlParams.get('panel') || 'overview';
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-panel') === panel) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Update content
+            document.querySelectorAll('.panel-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const targetPanel = document.getElementById(panel + '-panel');
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+            
+            // Update title
+            const panelTitles = {
+                'overview': 'Dashboard Overview',
+                'applications': 'Application Management',
+                'students': 'Student Management',
+                'programs': 'Program Management',
+                'users': 'User Management',
+                'payments': 'Payment Management',
+                'reports': 'Reports & Analytics',
+                'communications': 'Communications',
+                'settings': 'Settings',
+                'system': 'System Administration'
+            };
+            
+            if (panelTitles[panel]) {
+                document.getElementById('pageTitle').textContent = panelTitles[panel];
+            }
+        });
+    </script>
+</body>
+</html>
