@@ -351,10 +351,84 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             display: block;
         }
         
+        /* Progress Steps */
+        .progress-steps {
+            margin: 2rem 0;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e9ecef;
+            z-index: 1;
+        }
+        
+        .step.completed:not(:last-child)::after {
+            background: var(--primary-color);
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-circle {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+        
+        .step-label {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6c757d;
+            text-align: center;
+        }
+        
+        .step.active .step-label {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .step.completed .step-label {
+            color: #28a745;
+        }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                z-index: 1000;
+                position: fixed;
+                height: 100vh;
+                width: 280px;
             }
             
             .sidebar.show {
@@ -363,14 +437,52 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             
             .main-content {
                 margin-left: 0;
+                width: 100%;
+            }
+            
+            .top-header {
+                padding: 1rem;
+                margin-bottom: 0;
             }
             
             .content-wrapper {
                 padding: 1rem;
+                margin-top: 0;
             }
             
             .stat-number {
                 font-size: 1.5rem;
+            }
+            
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .page-title {
+                font-size: 1.1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .content-wrapper {
+                padding: 0.75rem;
+            }
+            
+            .top-header {
+                padding: 0.75rem;
+            }
+            
+            .stat-number {
+                font-size: 1.25rem;
+            }
+            
+            .sidebar {
+                width: 100%;
             }
         }
         /* Mobile Toggle Button */
@@ -425,6 +537,12 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 </a>
             </div>
             <div class="nav-item">
+                <a href="#" class="nav-link" data-panel="payments">
+                    <i class="bi bi-credit-card"></i>
+                    <span>Payment History</span>
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="#" class="nav-link" data-panel="profile">
                     <i class="bi bi-person"></i>
                     <span>Profile</span>
@@ -445,6 +563,34 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             </div>
             
             <div class="header-right">
+                <!-- Notifications -->
+                <div class="notification-bell me-3">
+                    <button class="btn btn-link position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell" style="font-size: 1.2rem; color: var(--text-primary);"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
+                            0
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 350px;">
+                        <li class="dropdown-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Notifications</span>
+                                <button class="btn btn-sm btn-link text-primary" onclick="markAllAsRead()">Mark all read</button>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <div id="notificationsList">
+                            <li class="dropdown-item-text text-center py-3">
+                                <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2 mb-0">No notifications</p>
+                            </li>
+                        </div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center" href="#" onclick="showPanel('notifications')">View all notifications</a></li>
+                    </ul>
+                </div>
+                
+                <!-- User Dropdown -->
                 <div class="user-dropdown">
                     <div class="user-avatar" data-bs-toggle="dropdown">
                         <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
@@ -477,6 +623,11 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 <?php include 'panels/programs.php'; ?>
             </div>
             
+            <!-- Payment History Panel -->
+            <div class="panel-content" id="payments-panel">
+                <?php include 'panels/payments.php'; ?>
+            </div>
+            
             <!-- Profile Panel -->
             <div class="panel-content" id="profile-panel">
                 <?php include 'panels/profile.php'; ?>
@@ -497,6 +648,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 'overview': 'Student Dashboard',
                 'applications': 'My Applications',
                 'programs': 'Available Programs',
+                'payments': 'Payment History',
                 'profile': 'My Profile'
             };
             
@@ -576,7 +728,128 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                     });
                 });
             }
+            
+            // Load notifications
+            loadNotifications();
+            
+            // Auto-refresh notifications every 30 seconds
+            setInterval(loadNotifications, 30000);
         });
+        
+        // Notification functions
+        function loadNotifications() {
+            fetch('../api/notifications.php?user_id=<?php echo $_SESSION['user_id']; ?>')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateNotificationBadge(data.unread_count);
+                        updateNotificationList(data.notifications);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                });
+        }
+        
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        function updateNotificationList(notifications) {
+            const container = document.getElementById('notificationsList');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <li class="dropdown-item-text text-center py-3">
+                        <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No notifications</p>
+                    </li>
+                `;
+                return;
+            }
+            
+            let html = '';
+            notifications.slice(0, 5).forEach(notification => {
+                const isRead = notification.is_read ? '' : 'fw-bold';
+                const timeAgo = getTimeAgo(notification.created_at);
+                
+                html += `
+                    <li class="dropdown-item ${isRead}" onclick="markAsRead(${notification.id})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${notification.title}</div>
+                                <small class="text-muted">${timeAgo}</small>
+                            </div>
+                            ${!notification.is_read ? '<span class="badge bg-primary rounded-pill ms-2">New</span>' : ''}
+                        </div>
+                    </li>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function markAsRead(notificationId) {
+            fetch('../api/notifications.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'mark_read',
+                    notification_id: notificationId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadNotifications(); // Reload to update the list
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+        
+        function markAllAsRead() {
+            fetch('../api/notifications.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'mark_all_read',
+                    user_id: <?php echo $_SESSION['user_id']; ?>
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadNotifications(); // Reload to update the list
+                }
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+            });
+        }
+        
+        function getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
     </script>
 </body>
 </html>

@@ -1,675 +1,440 @@
 <?php
 /**
- * Notification Manager
- * Handles multiple email and SMS provider integrations
+ * Notification Manager Class
+ * Handles email and SMS notifications across the system
  */
 
 class NotificationManager {
     private $db;
-    private $emailProviders = [];
-    private $smsProviders = [];
+    private $config;
+    private $emailSettings;
+    private $smsSettings;
     
-    public function __construct($database) {
-        $this->db = $database;
-        $this->loadProviders();
+    public function __construct($database, $systemConfig) {
+        // Handle both Database object and PDO connection
+        if ($database instanceof PDO) {
+            $this->db = $database;
+        } else {
+            $this->db = $database->getConnection();
+        }
+        
+        $this->config = $systemConfig;
+        $this->emailSettings = $this->config->getEmailSettings();
+        $this->smsSettings = $this->config->getSmsSettings();
     }
     
     /**
-     * Load all active notification providers
+     * Send notification (email and/or SMS)
      */
-    private function loadProviders() {
+    public function sendNotification($userId, $type, $data, $channels = ['email']) {
         try {
-            $stmt = $this->db->getConnection()->prepare("
-                SELECT * FROM notification_providers 
-                WHERE is_active = 1 
-                ORDER BY provider_type, priority ASC
-            ");
-            $stmt->execute();
-            $providers = $stmt->fetchAll();
-            
-            foreach ($providers as $provider) {
-                if ($provider['provider_type'] === 'email') {
-                    $this->emailProviders[] = $provider;
-                } else {
-                    $this->smsProviders[] = $provider;
-                }
-            }
-        } catch (Exception $e) {
-            error_log("Notification provider loading error: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Send email using available providers
-     */
-    public function sendEmail($to, $subject, $body, $isHtml = true, $priority = 'normal', $templateId = null) {
-        $emailProviders = $this->getEmailProviders();
-        
-        if (empty($emailProviders)) {
-            return ['success' => false, 'error' => 'No email providers configured'];
-        }
-        
-        // Try providers in order of priority
-        foreach ($emailProviders as $provider) {
-            $result = $this->sendEmailViaProvider($provider, $to, $subject, $body, $isHtml, $priority, $templateId);
-            
-            if ($result['success']) {
-                return $result;
+            // Get user details
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception("User not found");
             }
             
-            // Log failure and try next provider
-            error_log("Email provider {$provider['provider_name']} failed: " . ($result['error'] ?? 'Unknown error'));
-        }
-        
-        return ['success' => false, 'error' => 'All email providers failed'];
-    }
-    
-    /**
-     * Send SMS using available providers
-     */
-    public function sendSMS($to, $message, $priority = 'normal', $templateId = null) {
-        $smsProviders = $this->getSMSProviders();
-        
-        if (empty($smsProviders)) {
-            return ['success' => false, 'error' => 'No SMS providers configured'];
-        }
-        
-        // Try providers in order of priority
-        foreach ($smsProviders as $provider) {
-            $result = $this->sendSMSViaProvider($provider, $to, $message, $priority, $templateId);
+            // Prepare notification content
+            $content = $this->prepareNotificationContent($type, $data);
             
-            if ($result['success']) {
-                return $result;
-            }
+            // Log notification
+            $notificationId = $this->logNotification($userId, $type, $content, $channels);
             
-            // Log failure and try next provider
-            error_log("SMS provider {$provider['provider_name']} failed: " . ($result['error'] ?? 'Unknown error'));
-        }
-        
-        return ['success' => false, 'error' => 'All SMS providers failed'];
-    }
-    
-    /**
-     * Send email via specific provider
-     */
-    private function sendEmailViaProvider($provider, $to, $subject, $body, $isHtml, $priority, $templateId) {
-        try {
-            switch ($provider['provider_name']) {
-                case 'smtp':
-                    return $this->sendEmailViaSMTP($provider, $to, $subject, $body, $isHtml);
-                case 'sendgrid':
-                    return $this->sendEmailViaSendGrid($provider, $to, $subject, $body, $isHtml);
-                case 'mailgun':
-                    return $this->sendEmailViaMailgun($provider, $to, $subject, $body, $isHtml);
-                case 'ses':
-                    return $this->sendEmailViaSES($provider, $to, $subject, $body, $isHtml);
-                default:
-                    return ['success' => false, 'error' => 'Unsupported email provider'];
-            }
-        } catch (Exception $e) {
-            error_log("Email sending error for {$provider['provider_name']}: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Email sending failed'];
-        }
-    }
-    
-    /**
-     * Send SMS via specific provider
-     */
-    private function sendSMSViaProvider($provider, $to, $message, $priority, $templateId) {
-        try {
-            switch ($provider['provider_name']) {
-                case 'twilio':
-                    return $this->sendSMSViaTwilio($provider, $to, $message);
-                case 'nexmo':
-                    return $this->sendSMSViaNexmo($provider, $to, $message);
-                case 'africastalking':
-                    return $this->sendSMSViaAfricasTalking($provider, $to, $message);
-                case 'hubtel':
-                    return $this->sendSMSViaHubtel($provider, $to, $message);
-                case 'bulksms':
-                    return $this->sendSMSViaBulkSMS($provider, $to, $message);
-                default:
-                    return ['success' => false, 'error' => 'Unsupported SMS provider'];
-            }
-        } catch (Exception $e) {
-            error_log("SMS sending error for {$provider['provider_name']}: " . $e->getMessage());
-            return ['success' => false, 'error' => 'SMS sending failed'];
-        }
-    }
-    
-    /**
-     * Send email via SMTP
-     */
-    private function sendEmailViaSMTP($provider, $to, $subject, $body, $isHtml) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            require_once 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
-            require_once 'vendor/phpmailer/phpmailer/src/SMTP.php';
-            require_once 'vendor/phpmailer/phpmailer/src/Exception.php';
-            
-            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-            
-            // Server settings
-            $mail->isSMTP();
-            $mail->Host = $config['host'];
-            $mail->SMTPAuth = true;
-            $mail->Username = $config['username'];
-            $mail->Password = $config['password'];
-            $mail->SMTPSecure = $config['encryption'];
-            $mail->Port = $config['port'];
-            
-            // Recipients
-            $mail->setFrom($config['from_email'], $config['from_name']);
-            $mail->addAddress($to);
-            
-            // Content
-            $mail->isHTML($isHtml);
-            $mail->Subject = $subject;
-            $mail->Body = $body;
-            
-            $mail->send();
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send email via SendGrid
-     */
-    private function sendEmailViaSendGrid($provider, $to, $subject, $body, $isHtml) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'personalizations' => [
-                    [
-                        'to' => [
-                            ['email' => $to]
-                        ]
-                    ]
-                ],
-                'from' => [
-                    'email' => $config['from_email'],
-                    'name' => $config['from_name']
-                ],
-                'subject' => $subject,
-                'content' => [
-                    [
-                        'type' => $isHtml ? 'text/html' : 'text/plain',
-                        'value' => $body
-                    ]
-                ]
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://api.sendgrid.com/v3/mail/send',
-                $data,
-                [
-                    'Authorization: Bearer ' . $config['api_key'],
-                    'Content-Type: application/json'
-                ],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send email via Mailgun
-     */
-    private function sendEmailViaMailgun($provider, $to, $subject, $body, $isHtml) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'from' => $config['from_name'] . ' <' . $config['from_email'] . '>',
-                'to' => $to,
-                'subject' => $subject,
-                'html' => $isHtml ? $body : null,
-                'text' => $isHtml ? strip_tags($body) : $body
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://api.mailgun.net/v3/' . $config['domain'] . '/messages',
-                $data,
-                [
-                    'Authorization: Basic ' . base64_encode('api:' . $config['api_key'])
-                ],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send email via Amazon SES
-     */
-    private function sendEmailViaSES($provider, $to, $subject, $body, $isHtml) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            // This would require AWS SDK
-            // For now, return a placeholder
-            return ['success' => false, 'error' => 'Amazon SES integration requires AWS SDK'];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send SMS via Twilio
-     */
-    private function sendSMSViaTwilio($provider, $to, $message) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'From' => $config['from_number'],
-                'To' => $to,
-                'Body' => $message
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://api.twilio.com/2010-04-01/Accounts/' . $config['account_sid'] . '/Messages.json',
-                $data,
-                [
-                    'Authorization: Basic ' . base64_encode($config['account_sid'] . ':' . $config['auth_token'])
-                ],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name'], 'message_id' => $response['sid'] ?? null];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send SMS via Nexmo (Vonage)
-     */
-    private function sendSMSViaNexmo($provider, $to, $message) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'api_key' => $config['api_key'],
-                'api_secret' => $config['api_secret'],
-                'to' => $to,
-                'from' => $config['from_number'],
-                'text' => $message
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://rest.nexmo.com/sms/json',
-                $data,
-                ['Content-Type: application/json'],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name'], 'message_id' => $response['messages'][0]['message-id'] ?? null];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send SMS via Africa's Talking
-     */
-    private function sendSMSViaAfricasTalking($provider, $to, $message) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'username' => $config['username'],
-                'to' => $to,
-                'message' => $message,
-                'from' => $config['from_number']
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://api.africastalking.com/version1/messaging',
-                $data,
-                [
-                    'apiKey: ' . $config['api_key'],
-                    'Content-Type: application/x-www-form-urlencoded'
-                ],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send SMS via Hubtel
-     */
-    private function sendSMSViaHubtel($provider, $to, $message) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'From' => $config['from_number'],
-                'To' => $to,
-                'Content' => $message,
-                'Type' => 0,
-                'RegisteredDelivery' => 0
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://devapi.hubtel.com/v1/messages/send',
-                $data,
-                [
-                    'Authorization: Basic ' . base64_encode($config['client_id'] . ':' . $config['client_secret']),
-                    'Content-Type: application/json'
-                ],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Send SMS via BulkSMS
-     */
-    private function sendSMSViaBulkSMS($provider, $to, $message) {
-        try {
-            $config = json_decode($provider['config_data'], true);
-            
-            $data = [
-                'username' => $config['username'],
-                'password' => $config['password'],
-                'message' => $message,
-                'msisdn' => $to,
-                'sender' => $config['from_number']
-            ];
-            
-            $response = $this->makeHttpRequest(
-                'https://api.bulksms.com/v1/messages',
-                $data,
-                ['Content-Type: application/x-www-form-urlencoded'],
-                'POST'
-            );
-            
-            return ['success' => true, 'provider' => $provider['provider_name']];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Get available email providers
-     */
-    public function getEmailProviders() {
-        return $this->emailProviders;
-    }
-    
-    /**
-     * Get available SMS providers
-     */
-    public function getSMSProviders() {
-        return $this->smsProviders;
-    }
-    
-    /**
-     * Get default email provider
-     */
-    public function getDefaultEmailProvider() {
-        foreach ($this->emailProviders as $provider) {
-            if ($provider['is_default']) {
-                return $provider;
-            }
-        }
-        return !empty($this->emailProviders) ? $this->emailProviders[0] : null;
-    }
-    
-    /**
-     * Get default SMS provider
-     */
-    public function getDefaultSMSProvider() {
-        foreach ($this->smsProviders as $provider) {
-            if ($provider['is_default']) {
-                return $provider;
-            }
-        }
-        return !empty($this->smsProviders) ? $this->smsProviders[0] : null;
-    }
-    
-    /**
-     * Update provider configuration
-     */
-    public function updateProviderConfig($providerId, $configData) {
-        try {
-            $stmt = $this->db->getConnection()->prepare("
-                UPDATE notification_providers 
-                SET config_data = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?
-            ");
-            return $stmt->execute([json_encode($configData), $providerId]);
-        } catch (Exception $e) {
-            error_log("Provider config update error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Set default provider
-     */
-    public function setDefaultProvider($providerId) {
-        try {
-            $this->db->beginTransaction();
-            
-            // Get provider type
-            $stmt = $this->db->getConnection()->prepare("SELECT provider_type FROM notification_providers WHERE id = ?");
-            $stmt->execute([$providerId]);
-            $provider = $stmt->fetch();
-            
-            if (!$provider) {
-                $this->db->rollback();
-                return false;
-            }
-            
-            // Remove default from all providers of same type
-            $stmt1 = $this->db->getConnection()->prepare("UPDATE notification_providers SET is_default = 0 WHERE provider_type = ?");
-            $stmt1->execute([$provider['provider_type']]);
-            
-            // Set new default
-            $stmt2 = $this->db->getConnection()->prepare("UPDATE notification_providers SET is_default = 1 WHERE id = ?");
-            $result = $stmt2->execute([$providerId]);
-            
-            $this->db->commit();
-            return $result;
-        } catch (Exception $e) {
-            $this->db->rollback();
-            error_log("Set default provider error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Toggle provider status
-     */
-    public function toggleProviderStatus($providerId, $isActive) {
-        try {
-            $stmt = $this->db->getConnection()->prepare("
-                UPDATE notification_providers 
-                SET is_active = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?
-            ");
-            return $stmt->execute([$isActive ? 1 : 0, $providerId]);
-        } catch (Exception $e) {
-            error_log("Provider status toggle error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Make HTTP request
-     */
-    private function makeHttpRequest($url, $data = [], $headers = [], $method = 'GET') {
-        $ch = curl_init();
-        
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        
-        if (!empty($headers)) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        }
-        
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            if (!empty($data)) {
-                if (in_array('Content-Type: application/json', $headers)) {
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-                } else {
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-                }
-            }
-        }
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($error) {
-            error_log("HTTP request error: " . $error);
-            return false;
-        }
-        
-        if ($httpCode >= 400) {
-            error_log("HTTP request failed with code: " . $httpCode);
-            return false;
-        }
-        
-        return json_decode($response, true);
-    }
-    
-    /**
-     * Queue notification for batch processing
-     */
-    public function queueNotification($type, $to, $subject, $body, $templateId = null, $priority = 'normal') {
-        try {
-            if ($type === 'email') {
-                $stmt = $this->db->getConnection()->prepare("
-                    INSERT INTO email_queue (to_email, subject, body_html, body_text, template_id, priority) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ");
-                return $stmt->execute([
-                    $to,
-                    $subject,
-                    $body,
-                    strip_tags($body),
-                    $templateId,
-                    $priority
-                ]);
-            } else {
-                $stmt = $this->db->getConnection()->prepare("
-                    INSERT INTO sms_queue (to_phone, message, template_id, priority) 
-                    VALUES (?, ?, ?, ?)
-                ");
-                return $stmt->execute([
-                    $to,
-                    $body,
-                    $templateId,
-                    $priority
-                ]);
-            }
-        } catch (Exception $e) {
-            error_log("Notification queue error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Process notification queue
-     */
-    public function processQueue($type, $limit = 50) {
-        try {
-            if ($type === 'email') {
-                $stmt = $this->db->getConnection()->prepare("
-                    SELECT * FROM email_queue 
-                    WHERE status = 'pending' 
-                    ORDER BY priority DESC, scheduled_at ASC 
-                    LIMIT ?
-                ");
-                $stmt->execute([$limit]);
-                $queue = $stmt->fetchAll();
-                
-                foreach ($queue as $item) {
-                    $result = $this->sendEmail(
-                        $item['to_email'],
-                        $item['subject'],
-                        $item['body_html'] ?: $item['body_text'],
-                        !empty($item['body_html']),
-                        $item['priority']
-                    );
-                    
-                    $this->updateQueueStatus('email', $item['id'], $result['success'] ? 'sent' : 'failed', $result['error'] ?? null);
-                }
-            } else {
-                $stmt = $this->db->getConnection()->prepare("
-                    SELECT * FROM sms_queue 
-                    WHERE status = 'pending' 
-                    ORDER BY priority DESC, scheduled_at ASC 
-                    LIMIT ?
-                ");
-                $stmt->execute([$limit]);
-                $queue = $stmt->fetchAll();
-                
-                foreach ($queue as $item) {
-                    $result = $this->sendSMS(
-                        $item['to_phone'],
-                        $item['message'],
-                        $item['priority']
-                    );
-                    
-                    $this->updateQueueStatus('sms', $item['id'], $result['success'] ? 'sent' : 'failed', $result['error'] ?? null);
+            // Send via specified channels
+            $results = [];
+            foreach ($channels as $channel) {
+                switch ($channel) {
+                    case 'email':
+                        $results['email'] = $this->sendEmail($user['email'], $content['subject'], $content['body']);
+                        break;
+                    case 'sms':
+                        $results['sms'] = $this->sendSMS($user['phone'], $content['sms_body']);
+                        break;
+                    case 'push':
+                        $results['push'] = $this->sendPushNotification($userId, $content['title'], $content['body']);
+                        break;
                 }
             }
             
-            return true;
+            // Update notification status
+            $this->updateNotificationStatus($notificationId, $results);
+            
+            return [
+                'success' => true,
+                'notification_id' => $notificationId,
+                'results' => $results
+            ];
+            
         } catch (Exception $e) {
-            error_log("Queue processing error: " . $e->getMessage());
-            return false;
+            error_log("Notification error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
         }
     }
     
     /**
-     * Update queue item status
+     * Send email notification
      */
-    private function updateQueueStatus($type, $id, $status, $errorMessage = null) {
+    private function sendEmail($to, $subject, $body) {
         try {
-            $table = $type === 'email' ? 'email_queue' : 'sms_queue';
-            $stmt = $this->db->getConnection()->prepare("
-                UPDATE {$table} 
-                SET status = ?, sent_at = ?, error_message = ?, attempts = attempts + 1 
-                WHERE id = ?
+            // Use PHPMailer or similar for production
+            // For now, we'll use basic mail() function
+            
+            $headers = [
+                'From: ' . $this->emailSettings['from_email'],
+                'Reply-To: ' . $this->emailSettings['from_email'],
+                'X-Mailer: PHP/' . phpversion(),
+                'Content-Type: text/html; charset=UTF-8'
+            ];
+            
+            $htmlBody = $this->wrapEmailTemplate($body);
+            
+            $result = mail($to, $subject, $htmlBody, implode("\r\n", $headers));
+            
+            return [
+                'success' => $result,
+                'channel' => 'email',
+                'to' => $to
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'channel' => 'email',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Send SMS notification
+     */
+    private function sendSMS($phone, $message) {
+        try {
+            // In production, integrate with SMS service like Twilio, Africa's Talking, etc.
+            // For now, we'll simulate SMS sending
+            
+            if (empty($phone)) {
+                throw new Exception("Phone number not provided");
+            }
+            
+            // Simulate SMS sending
+            $result = true; // This would be actual SMS API call
+            
+            return [
+                'success' => $result,
+                'channel' => 'sms',
+                'to' => $phone
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'channel' => 'sms',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Send push notification
+     */
+    private function sendPushNotification($userId, $title, $body) {
+        try {
+            // In production, integrate with Firebase Cloud Messaging or similar
+            // For now, we'll simulate push notification
+            
+            $result = true; // This would be actual push notification API call
+            
+            return [
+                'success' => $result,
+                'channel' => 'push',
+                'user_id' => $userId
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'channel' => 'push',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Prepare notification content based on type
+     */
+    private function prepareNotificationContent($type, $data) {
+        $templates = [
+            'application_submitted' => [
+                'subject' => 'Application Submitted Successfully',
+                'title' => 'Application Submitted',
+                'body' => "
+                    <h2>Application Submitted Successfully!</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>Your application for <strong>{$data['program_name']}</strong> has been submitted successfully.</p>
+                    <p><strong>Application ID:</strong> {$data['application_id']}</p>
+                    <p><strong>Program:</strong> {$data['program_name']} ({$data['program_code']})</p>
+                    <p><strong>Submitted:</strong> " . date('F j, Y \a\t g:i A') . "</p>
+                    <p>We will review your application and notify you of the status within 5-7 business days.</p>
+                    <p>Thank you for choosing our institution!</p>
+                ",
+                'sms_body' => "Application submitted for {$data['program_name']}. ID: {$data['application_id']}. We'll review and notify you within 5-7 days."
+            ],
+            
+            'application_approved' => [
+                'subject' => 'Application Approved - Congratulations!',
+                'title' => 'Application Approved',
+                'body' => "
+                    <h2>Congratulations! Your Application Has Been Approved</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>We are pleased to inform you that your application for <strong>{$data['program_name']}</strong> has been approved!</p>
+                    <p><strong>Application ID:</strong> {$data['application_id']}</p>
+                    <p><strong>Program:</strong> {$data['program_name']} ({$data['program_code']})</p>
+                    <p><strong>Approved:</strong> " . date('F j, Y \a\t g:i A') . "</p>
+                    <p>Next steps will be communicated to you shortly. Welcome to our institution!</p>
+                    <p>Congratulations again!</p>
+                ",
+                'sms_body' => "Congratulations! Your application for {$data['program_name']} has been approved. Welcome to our institution!"
+            ],
+            
+            'application_rejected' => [
+                'subject' => 'Application Status Update',
+                'title' => 'Application Update',
+                'body' => "
+                    <h2>Application Status Update</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>Thank you for your interest in our institution. After careful review, we regret to inform you that your application for <strong>{$data['program_name']}</strong> was not successful.</p>
+                    <p><strong>Application ID:</strong> {$data['application_id']}</p>
+                    <p><strong>Program:</strong> {$data['program_name']} ({$data['program_code']})</p>
+                    <p><strong>Decision Date:</strong> " . date('F j, Y \a\t g:i A') . "</p>
+                    <p>We encourage you to apply for other programs or reapply in future admission cycles.</p>
+                    <p>Thank you for considering our institution.</p>
+                ",
+                'sms_body' => "Application for {$data['program_name']} was not successful. We encourage you to apply for other programs."
+            ],
+            
+            'payment_required' => [
+                'subject' => 'Payment Required for Application',
+                'title' => 'Payment Required',
+                'body' => "
+                    <h2>Payment Required</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>Your application for <strong>{$data['program_name']}</strong> requires payment to proceed.</p>
+                    <p><strong>Application ID:</strong> {$data['application_id']}</p>
+                    <p><strong>Amount Due:</strong> {$data['amount']}</p>
+                    <p><strong>Due Date:</strong> {$data['due_date']}</p>
+                    <p>Please complete your payment to continue with the application process.</p>
+                    <p><a href='{$data['payment_link']}' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Pay Now</a></p>
+                ",
+                'sms_body' => "Payment required for {$data['program_name']} application. Amount: {$data['amount']}. Due: {$data['due_date']}"
+            ],
+            
+            'payment_received' => [
+                'subject' => 'Payment Received - Thank You!',
+                'title' => 'Payment Received',
+                'body' => "
+                    <h2>Payment Received Successfully</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>Thank you! We have received your payment for the application fee.</p>
+                    <p><strong>Application ID:</strong> {$data['application_id']}</p>
+                    <p><strong>Amount Paid:</strong> {$data['amount']}</p>
+                    <p><strong>Transaction ID:</strong> {$data['transaction_id']}</p>
+                    <p><strong>Payment Date:</strong> " . date('F j, Y \a\t g:i A') . "</p>
+                    <p>Your application will now proceed to the review stage.</p>
+                    <p>Thank you for your payment!</p>
+                ",
+                'sms_body' => "Payment received for {$data['program_name']} application. Amount: {$data['amount']}. Transaction ID: {$data['transaction_id']}"
+            ],
+            
+            'deadline_reminder' => [
+                'subject' => 'Application Deadline Reminder',
+                'title' => 'Deadline Reminder',
+                'body' => "
+                    <h2>Application Deadline Reminder</h2>
+                    <p>Dear {$data['student_name']},</p>
+                    <p>This is a friendly reminder that the application deadline for <strong>{$data['program_name']}</strong> is approaching.</p>
+                    <p><strong>Program:</strong> {$data['program_name']} ({$data['program_code']})</p>
+                    <p><strong>Deadline:</strong> {$data['deadline']}</p>
+                    <p><strong>Days Remaining:</strong> {$data['days_remaining']}</p>
+                    <p>Please ensure you complete your application before the deadline.</p>
+                    <p><a href='{$data['application_link']}' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Complete Application</a></p>
+                ",
+                'sms_body' => "Application deadline for {$data['program_name']} is {$data['deadline']}. {$data['days_remaining']} days remaining."
+            ]
+        ];
+        
+        if (!isset($templates[$type])) {
+            throw new Exception("Unknown notification type: $type");
+        }
+        
+        return $templates[$type];
+    }
+    
+    /**
+     * Wrap email content in HTML template
+     */
+    private function wrapEmailTemplate($body) {
+        return "
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                <title>Notification</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+                    .content { padding: 20px; background: #f9f9f9; }
+                    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+                    a { color: #007bff; text-decoration: none; }
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>" . APP_NAME . "</h1>
+                    </div>
+                    <div class='content'>
+                        $body
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated message. Please do not reply to this email.</p>
+                        <p>&copy; " . date('Y') . " " . APP_NAME . ". All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        ";
+    }
+    
+    /**
+     * Log notification in database
+     */
+    private function logNotification($userId, $type, $content, $channels) {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO notifications (user_id, type, title, message, channels, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, 'pending', NOW())
             ");
-            return $stmt->execute([
-                $status,
-                $status === 'sent' ? date('Y-m-d H:i:s') : null,
-                $errorMessage,
-                $id
+            
+            $channelsJson = json_encode($channels);
+            $stmt->execute([
+                $userId,
+                $type,
+                $content['title'],
+                $content['body'],
+                $channelsJson
             ]);
+            
+            return $this->db->lastInsertId();
+            
         } catch (Exception $e) {
-            error_log("Queue status update error: " . $e->getMessage());
+            error_log("Notification logging error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Update notification status
+     */
+    private function updateNotificationStatus($notificationId, $results) {
+        if (!$notificationId) return;
+        
+        try {
+            $status = 'delivered';
+            foreach ($results as $result) {
+                if (!$result['success']) {
+                    $status = 'failed';
+                    break;
+                }
+            }
+            
+            $stmt = $this->db->prepare("
+                UPDATE notifications 
+                SET status = ?, results = ?, updated_at = NOW() 
+                WHERE id = ?
+            ");
+            
+            $stmt->execute([$status, json_encode($results), $notificationId]);
+            
+        } catch (Exception $e) {
+            error_log("Notification status update error: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get user by ID
+     */
+    private function getUserById($userId) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT id, first_name, last_name, email, phone 
+                FROM users 
+                WHERE id = ? AND status = 'active'
+            ");
+            $stmt->execute([$userId]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            error_log("Get user error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get SMS settings
+     */
+    private function getSmsSettings() {
+        $sms = $this->config->getByCategory('sms');
+        
+        $defaults = [
+            'provider' => 'twilio', // twilio, africas_talking, etc.
+            'api_key' => '',
+            'api_secret' => '',
+            'sender_id' => APP_NAME,
+            'enabled' => '1'
+        ];
+        
+        return array_merge($defaults, $sms);
+    }
+    
+    /**
+     * Get notifications for user
+     */
+    public function getUserNotifications($userId, $limit = 50) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT * FROM notifications 
+                WHERE user_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            ");
+            $stmt->execute([$userId, $limit]);
+            return $stmt->fetchAll();
+        } catch (Exception $e) {
+            error_log("Get notifications error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Mark notification as read
+     */
+    public function markAsRead($notificationId, $userId) {
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE notifications 
+                SET is_read = 1, read_at = NOW() 
+                WHERE id = ? AND user_id = ?
+            ");
+            return $stmt->execute([$notificationId, $userId]);
+        } catch (Exception $e) {
+            error_log("Mark as read error: " . $e->getMessage());
             return false;
         }
     }
 }
+?>

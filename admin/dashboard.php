@@ -581,6 +581,12 @@ try {
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" data-panel="application_forms">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Application Forms</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" data-panel="users">
                     <i class="bi bi-person-gear"></i>
                     <span>Users</span>
@@ -596,6 +602,12 @@ try {
                 <a class="nav-link" data-panel="reports">
                     <i class="bi bi-graph-up"></i>
                     <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-panel="notifications">
+                    <i class="bi bi-bell"></i>
+                    <span>Notifications</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -669,6 +681,11 @@ try {
                 <?php include 'panels/programs.php'; ?>
             </div>
             
+            <!-- Application Forms Panel -->
+            <div class="panel-content" id="application_forms-panel">
+                <?php include 'panels/application_forms.php'; ?>
+            </div>
+            
             <!-- Users Panel -->
             <div class="panel-content" id="users-panel">
                 <?php include 'panels/users.php'; ?>
@@ -682,6 +699,11 @@ try {
             <!-- Reports Panel -->
             <div class="panel-content" id="reports-panel">
                 <?php include 'panels/reports.php'; ?>
+            </div>
+            
+            <!-- Notifications Panel -->
+            <div class="panel-content" id="notifications-panel">
+                <?php include 'panels/notifications.php'; ?>
             </div>
             
             <!-- Communications Panel -->
@@ -705,58 +727,56 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Panel switching using student dashboard approach
-        function showPanel(panelName) {
+        document.addEventListener('DOMContentLoaded', function() {
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
+            const pageTitle = document.getElementById('pageTitle');
             
-            // Remove active class from all nav links
-            navLinks.forEach(nl => nl.classList.remove('active'));
-            
-            // Hide all panel contents
-            panelContents.forEach(panel => panel.classList.remove('active'));
-            
-            // Show target panel
-            const targetPanelElement = document.getElementById(panelName + '-panel');
-            if (targetPanelElement) {
-                targetPanelElement.classList.add('active');
-            }
-            
-            // Add active class to corresponding nav link
-            const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
-            if (targetNavLink) {
-                targetNavLink.classList.add('active');
-            }
-            
-            // Update page title
             const panelTitles = {
                 'overview': 'Dashboard Overview',
                 'applications': 'Manage Applications',
                 'students': 'Manage Students',
                 'programs': 'Manage Programs',
+                'application_forms': 'Application Forms',
                 'users': 'Manage Users',
                 'payments': 'Payment Management',
                 'reports': 'Reports & Analytics',
+                'notifications': 'Notifications',
                 'communications': 'Communications',
                 'settings': 'System Settings',
                 'system': 'System Administration'
             };
             
-            const pageTitle = document.getElementById('pageTitle');
-            if (pageTitle && panelTitles[panelName]) {
-                pageTitle.textContent = panelTitles[panelName];
+            // Function to show panel
+            function showPanel(panelName) {
+                // Remove active class from all nav links
+                navLinks.forEach(nl => nl.classList.remove('active'));
+                
+                // Hide all panel contents
+                panelContents.forEach(panel => panel.classList.remove('active'));
+                
+                // Show target panel
+                const targetPanelElement = document.getElementById(panelName + '-panel');
+                if (targetPanelElement) {
+                    targetPanelElement.classList.add('active');
+                }
+                
+                // Add active class to corresponding nav link
+                const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+                if (targetNavLink) {
+                    targetNavLink.classList.add('active');
+                }
+                
+                // Update page title
+                if (panelTitles[panelName]) {
+                    pageTitle.textContent = panelTitles[panelName];
+                }
+                
+                // Update URL without page reload
+                const url = new URL(window.location);
+                url.searchParams.set('panel', panelName);
+                window.history.pushState({}, '', url);
             }
-            
-            // Update URL without page reload
-            const url = new URL(window.location);
-            url.searchParams.set('panel', panelName);
-            window.history.pushState({}, '', url);
-        }
-        
-        // Initialize after DOM loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
-            const panelContents = document.querySelectorAll('.panel-content');
             
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {

@@ -1,4 +1,43 @@
 <?php
+// Handle avatar upload
+if ($_POST && isset($_POST['action']) && $_POST['action'] === 'upload_avatar') {
+    if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = '../uploads/avatars/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $fileExtension = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        
+        if (in_array($fileExtension, $allowedExtensions)) {
+            $fileName = 'student_' . $_SESSION['user_id'] . '_' . time() . '.' . $fileExtension;
+            $uploadPath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($_FILES['avatar']['tmp_name'], $uploadPath)) {
+                // Update user record with avatar path
+                $avatarPath = 'uploads/avatars/' . $fileName;
+                $userModel->update($_SESSION['user_id'], ['avatar' => $avatarPath]);
+                
+                echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>Avatar updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                      </div>';
+            } else {
+                echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-circle me-2"></i>Failed to upload avatar. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                      </div>';
+            }
+        } else {
+            echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>Invalid file type. Please upload JPG, PNG, or GIF files only.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>';
+        }
+    }
+}
+
 // Handle profile updates
 if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
     $firstName = trim($_POST['first_name'] ?? '');
@@ -157,6 +196,41 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'change_password')
     
     <!-- Account Settings -->
     <div class="col-lg-4 mb-3">
+        <!-- Profile Picture -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-camera me-2"></i>
+                    Profile Picture
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <?php if (!empty($currentUser['avatar'])): ?>
+                        <img src="../<?php echo htmlspecialchars($currentUser['avatar']); ?>" 
+                             alt="Profile Picture" class="rounded-circle" 
+                             style="width: 120px; height: 120px; object-fit: cover;">
+                    <?php else: ?>
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" 
+                             style="width: 120px; height: 120px; font-size: 2rem;">
+                            <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" class="d-inline">
+                    <input type="hidden" name="action" value="upload_avatar">
+                    <div class="mb-3">
+                        <input type="file" class="form-control form-control-sm" name="avatar" accept="image/*" id="avatarInput">
+                        <small class="form-text text-muted">JPG, PNG, or GIF (max 2MB)</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload me-1"></i>Upload Photo
+                    </button>
+                </form>
+            </div>
+        </div>
+        
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">

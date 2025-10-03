@@ -173,6 +173,11 @@ class SystemConfig {
         
         $defaults = [
             'currency' => 'USD',
+            'currency_symbol' => '$',
+            'currency_position' => 'before', // before, after
+            'decimal_places' => '2',
+            'thousand_separator' => ',',
+            'decimal_separator' => '.',
             'paystack_public_key' => '',
             'paystack_secret_key' => '',
             'flutterwave_public_key' => '',
@@ -182,6 +187,38 @@ class SystemConfig {
         ];
         
         return array_merge($defaults, $payment);
+    }
+    
+    /**
+     * Get currency settings
+     */
+    public function getCurrencySettings() {
+        $currency = $this->getByCategory('currency');
+        
+        $defaults = [
+            'default_currency' => 'USD',
+            'available_currencies' => 'USD,EUR,GBP,NGN',
+            'exchange_rate_api' => 'free', // free, premium
+            'auto_update_rates' => '1',
+            'rate_update_frequency' => 'daily' // daily, weekly, monthly
+        ];
+        
+        return array_merge($defaults, $currency);
+    }
+    
+    /**
+     * Save currency settings
+     */
+    public function saveCurrencySettings($settings) {
+        $success = true;
+        
+        foreach ($settings as $key => $value) {
+            if (!$this->set('currency', $key, $value)) {
+                $success = false;
+            }
+        }
+        
+        return $success;
     }
     
     /**

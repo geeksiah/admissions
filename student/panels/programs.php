@@ -1,6 +1,10 @@
 <?php
 // Get available programs
 $programs = $programModel->getAll(['status' => 'active']);
+
+// Initialize currency helper
+require_once '../classes/Currency.php';
+$currency = new Currency($systemConfig);
 ?>
 
 <div class="row mb-3">
@@ -52,7 +56,7 @@ $programs = $programModel->getAll(['status' => 'active']);
                             </small>
                             <small class="text-muted d-block" style="font-size: 0.75rem;">
                                 <i class="bi bi-credit-card me-1"></i>
-                                Fee: $<?php echo number_format($program['application_fee'] ?? 0); ?>
+                                Fee: <?php echo $currency->format($program['application_fee'] ?? 0); ?>
                             </small>
                         </div>
                         
@@ -113,14 +117,80 @@ $programs = $programModel->getAll(['status' => 'active']);
 <script>
 let currentProgramId = null;
 
+// Currency formatting function
+function formatCurrency(amount) {
+    // Get currency settings from PHP (would be better to load via AJAX)
+    const currency = '<?php echo $currency->getSettings()['currency']; ?>';
+    const symbol = '<?php echo $currency->getCurrencySymbol(); ?>';
+    const position = '<?php echo $currency->getSettings()['currency_position']; ?>';
+    const decimalPlaces = <?php echo $currency->getSettings()['decimal_places']; ?>;
+    const thousandSep = '<?php echo $currency->getSettings()['thousand_separator']; ?>';
+    const decimalSep = '<?php echo $currency->getSettings()['decimal_separator']; ?>';
+    
+    const formattedAmount = parseFloat(amount).toLocaleString('en-US', {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces
+    }).replace(/,/g, thousandSep).replace(/\./g, decimalSep);
+    
+    return position === 'before' ? symbol + formattedAmount : formattedAmount + ' ' + symbol;
+}
+
 function viewProgram(programId) {
     currentProgramId = programId;
     
-    // TODO: Load program details via AJAX
-    // For now, show a placeholder
-    document.getElementById('programDetailTitle').innerHTML = '<i class="bi bi-book me-2"></i>Program Details';
-    document.getElementById('programDetailBody').innerHTML = '<p>Loading program details...</p>';
-    document.getElementById('applyFromDetailBtn').style.display = 'block';
+    // Load program details
+    fetch(`../api/program-details.php?id=${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const program = data.program;
+                document.getElementById('programDetailTitle').innerHTML = `<i class="bi bi-book me-2"></i>${program.program_name}`;
+                
+                document.getElementById('programDetailBody').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-info-circle me-2"></i>Program Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Program Code:</strong></td><td>${program.program_code}</td></tr>
+                                <tr><td><strong>Department:</strong></td><td>${program.department || 'General'}</td></tr>
+                                <tr><td><strong>Degree Level:</strong></td><td>${program.degree_level || 'Undergraduate'}</td></tr>
+                                <tr><td><strong>Duration:</strong></td><td>${program.duration || 'N/A'}</td></tr>
+                                <tr><td><strong>Application Fee:</strong></td><td>${formatCurrency(program.application_fee || 0)}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-calendar me-2"></i>Important Dates</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Application Deadline:</strong></td><td>${program.deadline || 'Open'}</td></tr>
+                                <tr><td><strong>Start Date:</strong></td><td>${program.start_date || 'TBD'}</td></tr>
+                                <tr><td><strong>Semester:</strong></td><td>${program.semester || 'Fall 2024'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6><i class="bi bi-file-text me-2"></i>Description</h6>
+                        <p class="text-muted">${program.description || 'No description available.'}</p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6><i class="bi bi-list-check me-2"></i>Requirements</h6>
+                        <div class="text-muted">${program.requirements || 'No specific requirements listed.'}</div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6><i class="bi bi-mortarboard me-2"></i>Curriculum Highlights</h6>
+                        <div class="text-muted">${program.curriculum || 'Curriculum details will be provided upon admission.'}</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('programDetailBody').innerHTML = '<p class="text-danger">Failed to load program details.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('programDetailBody').innerHTML = '<p class="text-danger">Error loading program details.</p>';
+        });
     
     const modal = new bootstrap.Modal(document.getElementById('programDetailModal'));
     modal.show();

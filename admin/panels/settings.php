@@ -46,6 +46,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $message = $success ? 'Branding settings updated successfully!' : 'Failed to update branding settings.';
             break;
             
+        case 'currency':
+            $currencySettings = [
+                'default_currency' => $_POST['default_currency'] ?? 'USD',
+                'available_currencies' => $_POST['available_currencies'] ?? 'USD,EUR,GBP,NGN',
+                'exchange_rate_api' => $_POST['exchange_rate_api'] ?? 'free',
+                'auto_update_rates' => isset($_POST['auto_update_rates']) ? '1' : '0',
+                'rate_update_frequency' => $_POST['rate_update_frequency'] ?? 'daily'
+            ];
+            
+            $success = $configModel->saveCurrencySettings($currencySettings);
+            $message = $success ? 'Currency settings updated successfully!' : 'Failed to update currency settings.';
+            break;
+            
+        case 'payment':
+            $paymentSettings = [
+                'currency' => $_POST['currency'] ?? 'USD',
+                'currency_symbol' => $_POST['currency_symbol'] ?? '$',
+                'currency_position' => $_POST['currency_position'] ?? 'before',
+                'decimal_places' => $_POST['decimal_places'] ?? '2',
+                'thousand_separator' => $_POST['thousand_separator'] ?? ',',
+                'decimal_separator' => $_POST['decimal_separator'] ?? '.',
+                'paystack_public_key' => $_POST['paystack_public_key'] ?? '',
+                'paystack_secret_key' => $_POST['paystack_secret_key'] ?? '',
+                'flutterwave_public_key' => $_POST['flutterwave_public_key'] ?? '',
+                'flutterwave_secret_key' => $_POST['flutterwave_secret_key'] ?? '',
+                'stripe_public_key' => $_POST['stripe_public_key'] ?? '',
+                'stripe_secret_key' => $_POST['stripe_secret_key'] ?? ''
+            ];
+            
+            $success = $configModel->savePaymentSettings($paymentSettings);
+            $message = $success ? 'Payment settings updated successfully!' : 'Failed to update payment settings.';
+            break;
+            
         case 'email':
             $emailSettings = [
                 'smtp_host' => $_POST['smtp_host'] ?? '',
@@ -95,6 +128,7 @@ $configModel = new SystemConfig($pdo);
 $brandingSettings = $configModel->getBrandingSettings();
 $emailSettings = $configModel->getEmailSettings();
 $paymentSettings = $configModel->getPaymentSettings();
+$currencySettings = $configModel->getCurrencySettings();
 ?>
 
 <div class="row">
@@ -110,6 +144,9 @@ $paymentSettings = $configModel->getPaymentSettings();
                     </a>
                     <a href="#" class="list-group-item list-group-item-action" data-settings-tab="email">
                         <i class="bi bi-envelope me-2"></i>Email Settings
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" data-settings-tab="currency">
+                        <i class="bi bi-currency-exchange me-2"></i>Currency Settings
                     </a>
                     <a href="#" class="list-group-item list-group-item-action" data-settings-tab="payment">
                         <i class="bi bi-credit-card me-2"></i>Payment Gateways
@@ -296,6 +333,75 @@ $paymentSettings = $configModel->getPaymentSettings();
                         
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-2"></i>Update Email Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Currency Settings -->
+        <div class="settings-tab" id="currency-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-currency-exchange me-2"></i>Currency Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="currency">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Default Currency</label>
+                                <select class="form-select" name="default_currency">
+                                    <option value="USD" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'USD' ? 'selected' : ''; ?>>USD - US Dollar</option>
+                                    <option value="EUR" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'EUR' ? 'selected' : ''; ?>>EUR - Euro</option>
+                                    <option value="GBP" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'GBP' ? 'selected' : ''; ?>>GBP - British Pound</option>
+                                    <option value="NGN" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'NGN' ? 'selected' : ''; ?>>NGN - Nigerian Naira</option>
+                                    <option value="JPY" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'JPY' ? 'selected' : ''; ?>>JPY - Japanese Yen</option>
+                                    <option value="CAD" <?php echo ($currencySettings['default_currency'] ?? 'USD') === 'CAD' ? 'selected' : ''; ?>>CAD - Canadian Dollar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Available Currencies</label>
+                                <input type="text" class="form-control" name="available_currencies" 
+                                       value="<?php echo htmlspecialchars($currencySettings['available_currencies'] ?? 'USD,EUR,GBP,NGN'); ?>" 
+                                       placeholder="USD,EUR,GBP,NGN">
+                                <small class="form-text text-muted">Comma-separated currency codes</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Exchange Rate API</label>
+                                <select class="form-select" name="exchange_rate_api">
+                                    <option value="free" <?php echo ($currencySettings['exchange_rate_api'] ?? 'free') === 'free' ? 'selected' : ''; ?>>Free API</option>
+                                    <option value="premium" <?php echo ($currencySettings['exchange_rate_api'] ?? 'free') === 'premium' ? 'selected' : ''; ?>>Premium API</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rate Update Frequency</label>
+                                <select class="form-select" name="rate_update_frequency">
+                                    <option value="daily" <?php echo ($currencySettings['rate_update_frequency'] ?? 'daily') === 'daily' ? 'selected' : ''; ?>>Daily</option>
+                                    <option value="weekly" <?php echo ($currencySettings['rate_update_frequency'] ?? 'daily') === 'weekly' ? 'selected' : ''; ?>>Weekly</option>
+                                    <option value="monthly" <?php echo ($currencySettings['rate_update_frequency'] ?? 'daily') === 'monthly' ? 'selected' : ''; ?>>Monthly</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="auto_update_rates" id="auto_update_rates" 
+                                       <?php echo ($currencySettings['auto_update_rates'] ?? '1') === '1' ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="auto_update_rates">
+                                    Automatically update exchange rates
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Update Currency Settings
                         </button>
                     </form>
                 </div>
