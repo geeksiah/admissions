@@ -652,8 +652,10 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 'profile': 'My Profile'
             };
             
-            // Function to show panel
-            function showPanel(panelName) {
+            // Function to show panel (make it global)
+            window.showPanel = function(panelName) {
+                console.log('showPanel called with:', panelName);
+                
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
                 
@@ -662,14 +664,20 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
+                console.log('Target panel element:', targetPanelElement);
                 if (targetPanelElement) {
                     targetPanelElement.classList.add('active');
+                } else {
+                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+                console.log('Target nav link:', targetNavLink);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
+                } else {
+                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -681,12 +689,13 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 const url = new URL(window.location);
                 url.searchParams.set('panel', panelName);
                 window.history.pushState({}, '', url);
-            }
+            };
             
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
+                    console.log('Nav link clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });
@@ -701,6 +710,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             // Initialize panel based on URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const initialPanel = urlParams.get('panel') || 'overview';
+            console.log('Loading initial panel:', initialPanel);
             showPanel(initialPanel);
             
             // Mobile sidebar toggle
@@ -736,8 +746,8 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             setInterval(loadNotifications, 30000);
         });
         
-        // Notification functions
-        function loadNotifications() {
+        // Notification functions (make them global)
+        window.loadNotifications = function() {
             fetch('../api/notifications.php?user_id=<?php echo $_SESSION['user_id']; ?>')
                 .then(response => response.json())
                 .then(data => {
@@ -749,7 +759,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
                 .catch(error => {
                     console.error('Error loading notifications:', error);
                 });
-        }
+        };
         
         function updateNotificationBadge(count) {
             const badge = document.getElementById('notificationBadge');
@@ -795,7 +805,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             container.innerHTML = html;
         }
         
-        function markAsRead(notificationId) {
+        window.markAsRead = function(notificationId) {
             fetch('../api/notifications.php', {
                 method: 'POST',
                 headers: {
@@ -815,9 +825,9 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             .catch(error => {
                 console.error('Error marking notification as read:', error);
             });
-        }
+        };
         
-        function markAllAsRead() {
+        window.markAllAsRead = function() {
             fetch('../api/notifications.php', {
                 method: 'POST',
                 headers: {
@@ -837,7 +847,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             .catch(error => {
                 console.error('Error marking all notifications as read:', error);
             });
-        }
+        };
         
         function getTimeAgo(dateString) {
             const now = new Date();

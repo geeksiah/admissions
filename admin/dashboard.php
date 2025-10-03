@@ -747,8 +747,10 @@ try {
                 'system': 'System Administration'
             };
             
-            // Function to show panel
-            function showPanel(panelName) {
+            // Function to show panel (make it global)
+            window.showPanel = function(panelName) {
+                console.log('showPanel called with:', panelName);
+                
                 // Remove active class from all nav links
                 navLinks.forEach(nl => nl.classList.remove('active'));
                 
@@ -757,14 +759,20 @@ try {
                 
                 // Show target panel
                 const targetPanelElement = document.getElementById(panelName + '-panel');
+                console.log('Target panel element:', targetPanelElement);
                 if (targetPanelElement) {
                     targetPanelElement.classList.add('active');
+                } else {
+                    console.error('Panel element not found:', panelName + '-panel');
                 }
                 
                 // Add active class to corresponding nav link
                 const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+                console.log('Target nav link:', targetNavLink);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
+                } else {
+                    console.error('Nav link not found for panel:', panelName);
                 }
                 
                 // Update page title
@@ -776,12 +784,13 @@ try {
                 const url = new URL(window.location);
                 url.searchParams.set('panel', panelName);
                 window.history.pushState({}, '', url);
-            }
+            };
             
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetPanel = this.getAttribute('data-panel');
+                    console.log('Nav link clicked:', targetPanel);
                     showPanel(targetPanel);
                 });
             });
@@ -796,6 +805,7 @@ try {
             // Initialize panel based on URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const initialPanel = urlParams.get('panel') || 'overview';
+            console.log('Loading initial panel:', initialPanel);
             showPanel(initialPanel);
             
             // Mobile sidebar toggle
