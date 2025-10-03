@@ -31,8 +31,26 @@ $programModel = new Program($pdo);
 $currentUser = $userModel->getById($_SESSION['user_id']);
 $student = $studentModel->getByEmail($currentUser['email'] ?? '') ?: [];
 
+// If no student record exists, create one from user data
+if (!$student && $currentUser) {
+    $studentData = [
+        'user_id' => $currentUser['id'],
+        'first_name' => $currentUser['first_name'],
+        'last_name' => $currentUser['last_name'],
+        'email' => $currentUser['email'],
+        'phone' => $currentUser['phone'] ?? null,
+        'status' => 'active',
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    if ($studentModel->create($studentData)) {
+        $student = $studentModel->getByEmail($currentUser['email']);
+    }
+}
+
+// If still no student record, redirect to login
 if (!$student) {
-    header('Location: ../unauthorized.php');
+    header('Location: ../student-login.php');
     exit;
 }
 

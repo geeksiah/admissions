@@ -622,11 +622,11 @@ if (!in_array($panel, $validPanels)) {
         
         /* Panel Content */
         .panel-content {
-            display: none !important;
+            display: none;
         }
         
         .panel-content.active {
-            display: block !important;
+            display: block;
         }
     </style>
 </head>
@@ -798,32 +798,38 @@ if (!in_array($panel, $validPanels)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Simple panel navigation
-            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+        // Panel navigation
+        function showPanel(panelName) {
+            // Hide all panels
             const panels = document.querySelectorAll('.panel-content');
+            panels.forEach(panel => {
+                panel.style.display = 'none';
+            });
             
+            // Show target panel
+            const targetPanel = document.getElementById(panelName + '-panel');
+            if (targetPanel) {
+                targetPanel.style.display = 'block';
+            }
+            
+            // Update nav links
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-panel') === panelName) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to navigation links
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const panelName = this.getAttribute('data-panel');
-                    
-                    // Hide all panels
-                    panels.forEach(panel => {
-                        panel.style.display = 'none';
-                        panel.classList.remove('active');
-                    });
-                    
-                    // Show selected panel
-                    const targetPanel = document.getElementById(panelName + '-panel');
-                    if (targetPanel) {
-                        targetPanel.style.display = 'block';
-                        targetPanel.classList.add('active');
-                    }
-                    
-                    // Update active nav link
-                    navLinks.forEach(nl => nl.classList.remove('active'));
-                    this.classList.add('active');
+                    showPanel(panelName);
                 });
             });
             
