@@ -794,12 +794,17 @@ try {
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Dashboard loaded, initializing navigation...');
             
-            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            const navLinks = document.querySelectorAll('.sidebar-nav .nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
             
             console.log('Found nav links:', navLinks.length);
             console.log('Found panel contents:', panelContents.length);
+            
+            // Debug: Log all nav links found
+            navLinks.forEach((link, index) => {
+                console.log(`Nav link ${index}:`, link.getAttribute('data-panel'), link.textContent.trim());
+            });
             
             const panelTitles = {
                 'overview': 'Dashboard Overview',
@@ -840,7 +845,7 @@ try {
                 }
                 
                 // Add active class to corresponding nav link
-                const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
+                const targetNavLink = document.querySelector(`.sidebar-nav [data-panel="${panelName}"]`);
                 if (targetNavLink) {
                     targetNavLink.classList.add('active');
                 } else {
