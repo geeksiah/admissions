@@ -18,8 +18,8 @@ try {
 ?>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-lg-6 mb-3">
+<div class="row mb-3">
+    <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
         <div class="stat-card bg-primary">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -33,7 +33,7 @@ try {
         </div>
     </div>
     
-    <div class="col-xl-3 col-lg-6 mb-3">
+    <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
         <div class="stat-card bg-warning">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -47,7 +47,7 @@ try {
         </div>
     </div>
     
-    <div class="col-xl-3 col-lg-6 mb-3">
+    <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
         <div class="stat-card bg-success">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -61,7 +61,7 @@ try {
         </div>
     </div>
     
-    <div class="col-xl-3 col-lg-6 mb-3">
+    <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
         <div class="stat-card bg-info">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -77,7 +77,7 @@ try {
 </div>
 
 <!-- Charts Row -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-lg-8 mb-3">
         <div class="card">
             <div class="card-header">
@@ -86,8 +86,8 @@ try {
                     Application Trends
                 </h5>
             </div>
-            <div class="card-body">
-                <canvas id="applicationTrendsChart" height="100"></canvas>
+            <div class="card-body" style="padding: 1rem;">
+                <canvas id="applicationTrendsChart" height="80"></canvas>
             </div>
         </div>
     </div>
@@ -100,15 +100,15 @@ try {
                     Application Status
                 </h5>
             </div>
-            <div class="card-body">
-                <canvas id="applicationStatusChart"></canvas>
+            <div class="card-body" style="padding: 1rem;">
+                <canvas id="applicationStatusChart" height="80"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Recent Activity -->
-<div class="row">
+<div class="row mb-3">
     <div class="col-lg-6 mb-3">
         <div class="card">
             <div class="card-header">
@@ -117,24 +117,19 @@ try {
                     Recent Applications
                 </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="padding: 1rem;">
                 <?php if (empty($recentApplications)): ?>
-                    <div class="text-center py-4">
-                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">No recent applications</p>
+                    <div class="text-center py-3">
+                        <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No recent applications</p>
                     </div>
                 <?php else: ?>
                     <div class="list-group list-group-flush">
                         <?php foreach ($recentApplications as $app): ?>
-                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
                                 <div>
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></h6>
-                                    <small class="text-muted"><?php echo htmlspecialchars($app['program_name'] ?? 'Unknown Program'); ?></small>
-                                    <br>
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar me-1"></i>
-                                        <?php echo date('M j, Y', strtotime($app['created_at'])); ?>
-                                    </small>
+                                    <h6 class="mb-1" style="font-size: 0.875rem;"><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></h6>
+                                    <small class="text-muted" style="font-size: 0.75rem;"><?php echo htmlspecialchars($app['program_name'] ?? 'Unknown Program'); ?></small>
                                 </div>
                                 <span class="badge bg-<?php 
                                     switch($app['status']) {
@@ -144,15 +139,15 @@ try {
                                         case 'under_review': echo 'info'; break;
                                         default: echo 'secondary';
                                     }
-                                ?>">
+                                ?>" style="font-size: 0.625rem;">
                                     <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
                                 </span>
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="#" class="btn btn-outline-primary btn-sm" data-panel="applications">
-                            View All Applications
+                    <div class="text-center mt-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm" data-panel="applications" style="font-size: 0.75rem;">
+                            View All
                         </a>
                     </div>
                 <?php endif; ?>
@@ -168,34 +163,29 @@ try {
                     Recent Students
                 </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="padding: 1rem;">
                 <?php if (empty($recentStudents)): ?>
-                    <div class="text-center py-4">
-                        <i class="bi bi-person text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">No recent students</p>
+                    <div class="text-center py-3">
+                        <i class="bi bi-person text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No recent students</p>
                     </div>
                 <?php else: ?>
                     <div class="list-group list-group-flush">
                         <?php foreach ($recentStudents as $student): ?>
-                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
                                 <div>
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></h6>
-                                    <small class="text-muted"><?php echo htmlspecialchars($student['email']); ?></small>
-                                    <br>
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar me-1"></i>
-                                        <?php echo date('M j, Y', strtotime($student['created_at'])); ?>
-                                    </small>
+                                    <h6 class="mb-1" style="font-size: 0.875rem;"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></h6>
+                                    <small class="text-muted" style="font-size: 0.75rem;"><?php echo htmlspecialchars($student['email']); ?></small>
                                 </div>
-                                <span class="badge bg-<?php echo ($student['status'] ?? 'active') === 'active' ? 'success' : 'secondary'; ?>">
+                                <span class="badge bg-<?php echo ($student['status'] ?? 'active') === 'active' ? 'success' : 'secondary'; ?>" style="font-size: 0.625rem;">
                                     <?php echo ucfirst($student['status'] ?? 'active'); ?>
                                 </span>
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="#" class="btn btn-outline-primary btn-sm" data-panel="students">
-                            View All Students
+                    <div class="text-center mt-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm" data-panel="students" style="font-size: 0.75rem;">
+                            View All
                         </a>
                     </div>
                 <?php endif; ?>
