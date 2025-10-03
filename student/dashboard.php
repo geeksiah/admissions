@@ -27,6 +27,10 @@ $studentModel = new Student($pdo);
 $applicationModel = new Application($pdo);
 $programModel = new Program($pdo);
 
+// Get system config for panels
+require_once '../models/SystemConfig.php';
+$systemConfig = new SystemConfig($pdo);
+
 // Get current user data
 $currentUser = $userModel->getById($_SESSION['user_id']);
 
@@ -56,6 +60,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>console.log('HTML head loading');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - <?php echo APP_NAME; ?></title>
@@ -640,6 +645,7 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        console.log('Script tag loaded - before DOMContentLoaded');
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Student dashboard JavaScript loaded');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
@@ -867,5 +873,6 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
             return date.toLocaleDateString();
         }
     </script>
+    <script>console.log('End of page reached');</script>
 </body>
 </html>

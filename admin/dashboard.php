@@ -59,6 +59,7 @@ $brandingSettings = [];
 try {
     require_once '../models/SystemConfig.php';
     $configModel = new SystemConfig($pdo);
+    $systemConfig = $configModel; // Make available to panels
     $brandingSettings = $configModel->getByCategory('branding');
 } catch (Exception $e) {
     // Use defaults
@@ -72,6 +73,7 @@ try {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>console.log('HTML head loading');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo APP_NAME; ?> - Admin Dashboard</title>
@@ -664,12 +666,21 @@ try {
         <div class="content-wrapper">
             <!-- Overview Panel -->
             <div class="panel-content active" id="overview-panel">
-                <?php include 'panels/overview.php'; ?>
+                <?php // include 'panels/overview.php'; ?>
+                <div class="alert alert-success">
+                    <h4>Test Panel Loaded Successfully!</h4>
+                    <p>If you can see this, the basic panel system is working.</p>
+                    <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
+                </div>
             </div>
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <?php include 'panels/applications.php'; ?>
+                <?php // include 'panels/applications.php'; ?>
+                <div class="alert alert-info">
+                    <h4>Applications Panel</h4>
+                    <p>This panel would show applications management.</p>
+                </div>
             </div>
             
             <!-- Students Panel -->
@@ -704,7 +715,8 @@ try {
             
             <!-- Notifications Panel -->
             <div class="panel-content" id="notifications-panel">
-                <?php include 'panels/notifications.php'; ?>
+                <?php // include 'panels/notifications.php'; ?>
+                <div class="alert alert-info">Notifications panel temporarily disabled for debugging</div>
             </div>
             
             <!-- Communications Panel -->
@@ -728,6 +740,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        console.log('Script tag loaded - before DOMContentLoaded');
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Admin dashboard JavaScript loaded');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
@@ -841,5 +854,6 @@ try {
             }
         });
     </script>
+    <script>console.log('End of page reached');</script>
 </body>
 </html>
