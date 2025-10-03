@@ -20,64 +20,56 @@ try {
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-xl-3 col-lg-6 mb-3">
-        <div class="card stat-card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number"><?php echo number_format($stats['total_applications'] ?? 0); ?></div>
-                        <div class="stat-label">Total Applications</div>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
+        <div class="stat-card bg-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number"><?php echo number_format($stats['total_applications'] ?? 0); ?></div>
+                    <div class="stat-label">Total Applications</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="bi bi-file-earmark-text"></i>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-xl-3 col-lg-6 mb-3">
-        <div class="card stat-card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number"><?php echo number_format($stats['pending_applications'] ?? 0); ?></div>
-                        <div class="stat-label">Pending Review</div>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-clock"></i>
-                    </div>
+        <div class="stat-card bg-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number"><?php echo number_format($stats['pending_applications'] ?? 0); ?></div>
+                    <div class="stat-label">Pending Review</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="bi bi-clock"></i>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-xl-3 col-lg-6 mb-3">
-        <div class="card stat-card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number"><?php echo number_format($stats['approved_applications'] ?? 0); ?></div>
-                        <div class="stat-label">Approved</div>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-check-circle"></i>
-                    </div>
+        <div class="stat-card bg-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number"><?php echo number_format($stats['approved_applications'] ?? 0); ?></div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="bi bi-check-circle"></i>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-xl-3 col-lg-6 mb-3">
-        <div class="card stat-card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number"><?php echo number_format($paymentStats['total_revenue'] ?? 0, 0); ?></div>
-                        <div class="stat-label">Total Revenue</div>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-currency-dollar"></i>
-                    </div>
+        <div class="stat-card bg-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">$<?php echo number_format($paymentStats['total_revenue'] ?? 0, 0); ?></div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="bi bi-currency-dollar"></i>
                 </div>
             </div>
         </div>
