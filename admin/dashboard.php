@@ -743,52 +743,52 @@ if (!in_array($panel, $validPanels)) {
         <!-- Content Wrapper -->
         <div class="content-wrapper">
             <!-- Overview Panel -->
-            <div class="panel-content <?php echo $panel === 'overview' ? 'active' : ''; ?>" id="overview-panel">
+            <div class="panel-content active" id="overview-panel">
                 <?php include 'panels/overview.php'; ?>
             </div>
             
             <!-- Applications Panel -->
-            <div class="panel-content <?php echo $panel === 'applications' ? 'active' : ''; ?>" id="applications-panel">
+            <div class="panel-content" id="applications-panel">
                 <?php include 'panels/applications.php'; ?>
             </div>
             
             <!-- Students Panel -->
-            <div class="panel-content <?php echo $panel === 'students' ? 'active' : ''; ?>" id="students-panel">
+            <div class="panel-content" id="students-panel">
                 <?php include 'panels/students.php'; ?>
             </div>
             
             <!-- Programs Panel -->
-            <div class="panel-content <?php echo $panel === 'programs' ? 'active' : ''; ?>" id="programs-panel">
+            <div class="panel-content" id="programs-panel">
                 <?php include 'panels/programs.php'; ?>
             </div>
             
             <!-- Users Panel -->
-            <div class="panel-content <?php echo $panel === 'users' ? 'active' : ''; ?>" id="users-panel">
+            <div class="panel-content" id="users-panel">
                 <?php include 'panels/users.php'; ?>
             </div>
             
             <!-- Payments Panel -->
-            <div class="panel-content <?php echo $panel === 'payments' ? 'active' : ''; ?>" id="payments-panel">
+            <div class="panel-content" id="payments-panel">
                 <?php include 'panels/payments.php'; ?>
             </div>
             
             <!-- Reports Panel -->
-            <div class="panel-content <?php echo $panel === 'reports' ? 'active' : ''; ?>" id="reports-panel">
+            <div class="panel-content" id="reports-panel">
                 <?php include 'panels/reports.php'; ?>
             </div>
             
             <!-- Communications Panel -->
-            <div class="panel-content <?php echo $panel === 'communications' ? 'active' : ''; ?>" id="communications-panel">
+            <div class="panel-content" id="communications-panel">
                 <?php include 'panels/communications.php'; ?>
             </div>
             
             <!-- Settings Panel -->
-            <div class="panel-content <?php echo $panel === 'settings' ? 'active' : ''; ?>" id="settings-panel">
+            <div class="panel-content" id="settings-panel">
                 <?php include 'panels/settings.php'; ?>
             </div>
             
             <!-- System Panel -->
-            <div class="panel-content <?php echo $panel === 'system' ? 'active' : ''; ?>" id="system-panel">
+            <div class="panel-content" id="system-panel">
                 <?php include 'panels/system.php'; ?>
             </div>
         </div>
@@ -879,6 +879,12 @@ if (!in_array($panel, $validPanels)) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const panel = urlParams.get('panel') || 'overview';
                 showPanel(panel);
+            });
+            
+            // Initialize Bootstrap dropdowns
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
             });
             
             // Initialize panel based on URL parameter

@@ -14,6 +14,10 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 require_once 'config/config.php';
 require_once 'config/database.php';
 
+// Initialize database connection
+$database = new Database();
+$pdo = $database->getConnection();
+
 $error = '';
 $success = '';
 
@@ -141,7 +145,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
             box-shadow: var(--shadow-md);
             overflow: hidden;
             width: 100%;
-            max-width: 400px;
+            max-width: 480px;
         }
         
         .login-header {
@@ -228,38 +232,14 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'register') {
             font-size: 0.875rem;
         }
         
-        .back-link {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .back-link:hover {
-            color: white;
-            transform: translateX(-2px);
-        }
-        
         @media (max-width: 768px) {
             .login-container {
                 padding: 1rem;
-            }
-            
-            .back-link {
-                top: 1rem;
-                left: 1rem;
             }
         }
     </style>
 </head>
 <body>
-    <a href="index.php" class="back-link">
-        <i class="bi bi-arrow-left me-2"></i>Back to Admin Portal
-    </a>
-    
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
