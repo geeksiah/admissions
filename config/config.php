@@ -101,7 +101,8 @@ function setSecurityHeaders() {
     header('X-Frame-Options: DENY');
     header('X-XSS-Protection: 1; mode=block');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Content-Security-Policy: default-src \'self\'; script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: https:; font-src \'self\';');
+    // Allow trusted CDNs used in the app (Bootstrap, Icons, Chart.js)
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self';");
 }
 
 // Autoloader with absolute paths
@@ -157,7 +158,9 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        redirect('login.php');
+        // Always send to root login (avoids /admin/login.php 500s)
+        header('Location: /login.php');
+        exit();
     }
 }
 
@@ -174,7 +177,8 @@ function hasRole($requiredRoles) {
 
 function requireRole($requiredRoles) {
     if (!hasRole($requiredRoles)) {
-        redirect('unauthorized.php');
+        header('Location: /unauthorized.php');
+        exit();
     }
 }
 

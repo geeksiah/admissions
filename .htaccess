@@ -75,6 +75,10 @@ RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
 
+# Legacy dashboard routes -> unified dashboard
+RewriteRule ^admin/(dashboard_absolute|dashboard_working|dashboard_php84)\.php$ admin/dashboard.php [L,R=302]
+RewriteRule ^admin/login/?$ login.php [L,R=302]
+
 # Student routes - only rewrite if file doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
