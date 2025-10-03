@@ -68,17 +68,6 @@ try {
         'secondary_color' => '#764ba2'
     ];
 }
-
-// Determine current panel
-$panel = $_GET['panel'] ?? 'overview';
-$validPanels = [
-    'overview', 'applications', 'students', 'programs', 'users', 
-    'reports', 'settings', 'payments', 'communications', 'system'
-];
-
-if (!in_array($panel, $validPanels)) {
-    $panel = 'overview';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,7 +121,7 @@ if (!in_array($panel, $validPanels)) {
             font-size: 14px;
         }
         
-        /* Custom Scrollbar Styling */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -146,20 +135,13 @@ if (!in_array($panel, $validPanels)) {
         ::-webkit-scrollbar-thumb {
             background: var(--text-muted);
             border-radius: 4px;
-            transition: background 0.2s ease;
         }
         
         ::-webkit-scrollbar-thumb:hover {
             background: var(--text-secondary);
         }
         
-        /* Firefox Scrollbar */
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: var(--text-muted) var(--bg-tertiary);
-        }
-        
-        /* Sidebar Styles */
+        /* Sidebar */
         .sidebar {
             position: fixed;
             top: 0;
@@ -169,7 +151,7 @@ if (!in_array($panel, $validPanels)) {
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             z-index: 1000;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease;
             overflow-y: auto;
             box-shadow: var(--shadow-lg);
         }
@@ -190,7 +172,6 @@ if (!in_array($panel, $validPanels)) {
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
-            font-weight: 600;
         }
         
         .sidebar-logo img {
@@ -223,9 +204,9 @@ if (!in_array($panel, $validPanels)) {
             text-decoration: none;
             transition: all 0.2s ease;
             border-radius: var(--radius-md);
-            position: relative;
             font-weight: 500;
             font-size: 0.875rem;
+            cursor: pointer;
         }
         
         .nav-link:hover {
@@ -244,11 +225,6 @@ if (!in_array($panel, $validPanels)) {
             margin-right: 0.75rem;
             text-align: center;
             font-size: 0.875rem;
-            flex-shrink: 0;
-        }
-        
-        .nav-link span {
-            font-weight: 500;
         }
         
         /* Main Content */
@@ -310,10 +286,6 @@ if (!in_array($panel, $validPanels)) {
             gap: 1rem;
         }
         
-        .user-dropdown {
-            position: relative;
-        }
-        
         .user-avatar {
             width: 32px;
             height: 32px;
@@ -329,14 +301,6 @@ if (!in_array($panel, $validPanels)) {
             font-size: 0.75rem;
             border: 2px solid var(--bg-primary);
             box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
-        
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
         }
         
         .user-avatar:hover {
@@ -347,7 +311,7 @@ if (!in_array($panel, $validPanels)) {
         /* Content Area */
         .content-wrapper {
             padding: 1.5rem;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
@@ -359,7 +323,6 @@ if (!in_array($panel, $validPanels)) {
             margin-bottom: 1rem;
             transition: all 0.2s ease;
             background: var(--bg-primary);
-            overflow: hidden;
         }
         
         .card:hover {
@@ -369,7 +332,6 @@ if (!in_array($panel, $validPanels)) {
         .card-header {
             background: var(--bg-primary);
             border-bottom: 1px solid var(--border-light);
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
             padding: 1rem 1.25rem;
         }
         
@@ -387,14 +349,12 @@ if (!in_array($panel, $validPanels)) {
         /* Statistics Cards */
         .stat-card {
             background: var(--bg-primary);
-            color: var(--text-primary);
             border-radius: var(--radius-lg);
             padding: 1.25rem;
             transition: all 0.2s ease;
             border: 1px solid var(--border-color);
             position: relative;
             overflow: hidden;
-            height: 100%;
         }
         
         .stat-card::before {
@@ -404,6 +364,9 @@ if (!in_array($panel, $validPanels)) {
             left: 0;
             right: 0;
             height: 3px;
+        }
+        
+        .stat-card.bg-primary::before {
             background: var(--primary-color);
         }
         
@@ -421,6 +384,7 @@ if (!in_array($panel, $validPanels)) {
         
         .stat-card:hover {
             box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
         
         .stat-number {
@@ -440,42 +404,7 @@ if (!in_array($panel, $validPanels)) {
         
         .stat-icon {
             font-size: 1.25rem;
-            color: var(--primary-color);
-            opacity: 0.8;
-        }
-        
-        /* Tables */
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .table thead th {
-            background-color: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            font-weight: 600;
-            color: #475569;
-            padding: 1rem;
-        }
-        
-        .table tbody td {
-            padding: 1rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        
-        /* Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            opacity: 0.6;
         }
         
         /* Tables */
@@ -492,8 +421,6 @@ if (!in_array($panel, $validPanels)) {
             color: var(--text-primary);
             padding: 1rem;
             font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
         
         .table tbody td {
@@ -513,13 +440,12 @@ if (!in_array($panel, $validPanels)) {
             font-size: 0.875rem;
             padding: 0.5rem 1rem;
             transition: all 0.2s ease;
-            border: none;
         }
         
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
             color: white;
-            box-shadow: var(--shadow-sm);
         }
         
         .btn-primary:hover {
@@ -536,7 +462,6 @@ if (!in_array($panel, $validPanels)) {
         .btn-outline-primary:hover {
             background: var(--primary-color);
             color: white;
-            transform: translateY(-1px);
         }
         
         /* Badges */
@@ -547,17 +472,22 @@ if (!in_array($panel, $validPanels)) {
             border-radius: var(--radius-sm);
         }
         
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .content-wrapper {
-                padding: 1rem;
-            }
-            
-            .stat-number {
-                font-size: 1.5rem;
-            }
+        /* Panel Content - CRITICAL FOR SWITCHING */
+        .panel-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
         
+        .panel-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -571,10 +501,6 @@ if (!in_array($panel, $validPanels)) {
                 margin-left: 0;
             }
             
-            .content-wrapper {
-                padding: 0.75rem;
-            }
-            
             .sidebar-toggle {
                 display: block;
             }
@@ -582,51 +508,6 @@ if (!in_array($panel, $validPanels)) {
             .page-title {
                 font-size: 1rem;
             }
-            
-            .top-header {
-                padding: 0 1rem;
-            }
-            
-            .stat-number {
-                font-size: 1.25rem;
-            }
-            
-            .card-body {
-                padding: 1rem;
-            }
-            
-            .stat-card {
-                padding: 1rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .content-wrapper {
-                padding: 0.5rem;
-            }
-            
-            .stat-card {
-                padding: 0.75rem;
-            }
-            
-            .stat-number {
-                font-size: 1.125rem;
-            }
-        }
-        
-        /* Loading States */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        
-        /* Panel Content */
-        .panel-content {
-            display: none;
-        }
-        
-        .panel-content.active {
-            display: block;
         }
     </style>
 </head>
@@ -646,61 +527,61 @@ if (!in_array($panel, $validPanels)) {
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
-                <a class="nav-link active" href="#" data-panel="overview">
+                <a class="nav-link active" data-panel="overview">
                     <i class="bi bi-speedometer2"></i>
                     <span>Overview</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="applications">
+                <a class="nav-link" data-panel="applications">
                     <i class="bi bi-file-earmark-text"></i>
                     <span>Applications</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="students">
+                <a class="nav-link" data-panel="students">
                     <i class="bi bi-people"></i>
                     <span>Students</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="programs">
+                <a class="nav-link" data-panel="programs">
                     <i class="bi bi-mortarboard"></i>
                     <span>Programs</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="users">
+                <a class="nav-link" data-panel="users">
                     <i class="bi bi-person-gear"></i>
                     <span>Users</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="payments">
+                <a class="nav-link" data-panel="payments">
                     <i class="bi bi-credit-card"></i>
                     <span>Payments</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="reports">
+                <a class="nav-link" data-panel="reports">
                     <i class="bi bi-graph-up"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="communications">
+                <a class="nav-link" data-panel="communications">
                     <i class="bi bi-chat-dots"></i>
                     <span>Communications</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="settings">
+                <a class="nav-link" data-panel="settings">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-panel="system">
+                <a class="nav-link" data-panel="system">
                     <i class="bi bi-shield-check"></i>
                     <span>System</span>
                 </a>
@@ -722,11 +603,7 @@ if (!in_array($panel, $validPanels)) {
             <div class="header-right">
                 <div class="user-dropdown">
                     <div class="user-avatar" data-bs-toggle="dropdown" aria-expanded="false">
-                        <?php if (!empty($brandingSettings['admin_avatar'])): ?>
-                            <img src="<?php echo htmlspecialchars($brandingSettings['admin_avatar']); ?>" alt="Profile">
-                        <?php else: ?>
-                            <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
-                        <?php endif; ?>
+                        <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header"><?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?></h6></li>
@@ -798,45 +675,85 @@ if (!in_array($panel, $validPanels)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Panel navigation
-        function showPanel(panelName) {
-            // Hide all panels
-            const panels = document.querySelectorAll('.panel-content');
-            panels.forEach(panel => {
-                panel.style.display = 'none';
+        // Panel switching with proper class management
+        function switchPanel(panelName) {
+            // Remove active class from all panels
+            document.querySelectorAll('.panel-content').forEach(panel => {
+                panel.classList.remove('active');
             });
             
-            // Show target panel
+            // Add active class to target panel
             const targetPanel = document.getElementById(panelName + '-panel');
             if (targetPanel) {
-                targetPanel.style.display = 'block';
+                targetPanel.classList.add('active');
             }
             
-            // Update nav links
-            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
-            navLinks.forEach(link => {
+            // Update navigation active state
+            document.querySelectorAll('.nav-link[data-panel]').forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('data-panel') === panelName) {
                     link.classList.add('active');
                 }
             });
+            
+            // Update page title
+            const titles = {
+                'overview': 'Dashboard Overview',
+                'applications': 'Manage Applications',
+                'students': 'Manage Students',
+                'programs': 'Manage Programs',
+                'users': 'Manage Users',
+                'payments': 'Payment Management',
+                'reports': 'Reports & Analytics',
+                'communications': 'Communications',
+                'settings': 'System Settings',
+                'system': 'System Administration'
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[panelName] || 'Dashboard';
+            
+            // Update URL hash
+            window.location.hash = panelName;
+            
+            // Close mobile sidebar
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('show');
+            }
         }
         
+        // Initialize after DOM loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Add click handlers to navigation links
-            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
-            navLinks.forEach(link => {
+            // Attach click events to nav links
+            document.querySelectorAll('.nav-link[data-panel]').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const panelName = this.getAttribute('data-panel');
-                    showPanel(panelName);
+                    switchPanel(this.getAttribute('data-panel'));
                 });
             });
             
-            // Initialize Bootstrap dropdowns
-            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-                return new bootstrap.Dropdown(dropdownToggleEl);
+            // Mobile sidebar toggle
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('show');
+                });
+            }
+            
+            // Load panel from URL hash
+            if (window.location.hash) {
+                const panel = window.location.hash.substring(1);
+                if (document.getElementById(panel + '-panel')) {
+                    switchPanel(panel);
+                }
+            }
+            
+            // Handle back/forward navigation
+            window.addEventListener('hashchange', () => {
+                if (window.location.hash) {
+                    switchPanel(window.location.hash.substring(1));
+                }
             });
         });
     </script>
