@@ -237,7 +237,6 @@ if (!in_array($panel, $validPanels)) {
         .nav-link.active {
             background-color: rgba(255,255,255,0.15);
             color: white;
-            border-right: 3px solid white;
         }
         
         .nav-link i {
@@ -328,10 +327,21 @@ if (!in_array($panel, $validPanels)) {
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.75rem;
+            border: 2px solid var(--bg-primary);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         
         .user-avatar:hover {
             transform: scale(1.05);
+            box-shadow: var(--shadow-md);
         }
         
         /* Content Area */
@@ -711,8 +721,12 @@ if (!in_array($panel, $validPanels)) {
             
             <div class="header-right">
                 <div class="user-dropdown">
-                    <div class="user-avatar" data-bs-toggle="dropdown">
-                        <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
+                    <div class="user-avatar" data-bs-toggle="dropdown" aria-expanded="false">
+                        <?php if (!empty($brandingSettings['admin_avatar'])): ?>
+                            <img src="<?php echo htmlspecialchars($brandingSettings['admin_avatar']); ?>" alt="Profile">
+                        <?php else: ?>
+                            <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
+                        <?php endif; ?>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header"><?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?></h6></li>

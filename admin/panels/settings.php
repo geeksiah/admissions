@@ -156,6 +156,24 @@ $paymentSettings = $configModel->getPaymentSettings();
                             </div>
                         </div>
                         
+                        <!-- Admin Avatar Upload -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Admin Profile Picture</label>
+                                <input type="file" class="form-control" name="admin_avatar" accept="image/*">
+                                <small class="form-text text-muted">Upload PNG, JPG, or GIF (max 2MB)</small>
+                            </div>
+                            <div class="col-md-6">
+                                <?php if (!empty($brandingSettings['admin_avatar'])): ?>
+                                    <label class="form-label">Current Avatar</label>
+                                    <div class="mt-2">
+                                        <img src="../<?php echo htmlspecialchars($brandingSettings['admin_avatar']); ?>" 
+                                             alt="Current Avatar" class="img-thumbnail rounded-circle" style="max-height: 80px; max-width: 80px;">
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
                         <!-- Institution Information -->
                         <div class="row mb-3">
                             <div class="col-md-6">

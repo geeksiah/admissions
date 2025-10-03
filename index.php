@@ -63,9 +63,9 @@ switch ($role) {
         case 'super_admin':
             header('Location: admin/dashboard.php');
             break;
-    case 'student':
-        header('Location: student/dashboard.php');
-        break;
+        case 'student':
+            header('Location: student/dashboard.php?panel=applications');
+            break;
     default:
         header('Location: unauthorized.php');
         break;

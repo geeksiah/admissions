@@ -103,6 +103,7 @@ class SystemConfig {
         // Set defaults if not exists
         $defaults = [
             'logo_url' => null,
+            'admin_avatar' => null,
             'primary_color' => '#667eea',
             'secondary_color' => '#764ba2',
             'institution_name' => APP_NAME,
