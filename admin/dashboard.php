@@ -75,6 +75,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo APP_NAME; ?> - Admin Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -152,7 +153,7 @@ try {
             color: white;
             z-index: 1000;
             transition: transform 0.3s ease;
-            overflow-y: auto;
+            overflow-y: hidden;
             box-shadow: var(--shadow-lg);
         }
         
@@ -728,9 +729,14 @@ try {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin dashboard JavaScript loaded');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
+            
+            console.log('Found nav links:', navLinks.length);
+            console.log('Found panel contents:', panelContents.length);
+            console.log('Page title element:', pageTitle);
             
             const panelTitles = {
                 'overview': 'Dashboard Overview',
