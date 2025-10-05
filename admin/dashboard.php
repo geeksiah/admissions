@@ -722,134 +722,123 @@ $brandingSettings = [
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Applications</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Applications panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/applications.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Applications panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Students Panel -->
             <div class="panel-content" id="students-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Students</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Students panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/students.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Students panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Programs Panel -->
             <div class="panel-content" id="programs-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Programs</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Programs panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/programs.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Programs panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Application Forms Panel -->
             <div class="panel-content" id="application_forms-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Application Forms</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Application Forms panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/application_forms.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Application Forms panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Users Panel -->
             <div class="panel-content" id="users-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Users</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Users panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/users.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Users panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Payments Panel -->
             <div class="panel-content" id="payments-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Payments</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Payments panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/payments.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Payments panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Reports Panel -->
             <div class="panel-content" id="reports-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Reports</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Reports panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/reports.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Reports panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Notifications Panel -->
             <div class="panel-content" id="notifications-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Notifications</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Notifications panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/notifications.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Notifications panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Communications Panel -->
             <div class="panel-content" id="communications-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Communications</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Communications panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/communications.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Communications panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- Settings Panel -->
             <div class="panel-content" id="settings-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Settings</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Settings panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/settings.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">Settings panel loading...</p></div></div>';
+                }
+                ?>
             </div>
             
             <!-- System Panel -->
             <div class="panel-content" id="system-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">System</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">System panel content will be restored soon.</p>
-                    </div>
-                </div>
+                <?php 
+                try {
+                    include 'panels/system.php';
+                } catch (Exception $e) {
+                    echo '<div class="card"><div class="card-body"><p class="text-muted">System panel loading...</p></div></div>';
+                }
+                ?>
             </div>
     </div>
 </div>
