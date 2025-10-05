@@ -4,8 +4,12 @@
 
 // Only initialize if not already done
 if (!isset($database)) {
-    require_once 'config/config.php';
-    require_once 'config/database.php';
+    // Check if we're in admin directory and adjust paths
+    $configPath = file_exists('config/config.php') ? 'config/config.php' : '../config/config.php';
+    $databasePath = file_exists('config/database.php') ? 'config/database.php' : '../config/database.php';
+    
+    require_once $configPath;
+    require_once $databasePath;
     $database = new Database();
 }
 

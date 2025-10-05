@@ -72,6 +72,7 @@ RewriteEngine On
 # Test rules for debugging
 RewriteRule ^debug/?$ debug-navigation.php [L,QSA]
 RewriteRule ^test-dashboard/?$ test-dashboard.php [L,QSA]
+RewriteRule ^test-config/?$ test-config.php [L,QSA]
 
 # Dashboard route
 RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
