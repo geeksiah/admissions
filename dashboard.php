@@ -15,14 +15,14 @@ if (!isset($_SESSION['user_id'])) {
 
 // Redirect to proper dashboard based on user role
 if (isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'super_admin') {
-        header('Location: admin/dashboard_working.php');
+    if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'super_admin' || $_SESSION['role'] === 'admissions_officer' || $_SESSION['role'] === 'reviewer') {
+        header('Location: admin/dashboard.php');
     } else {
         header('Location: student/dashboard.php');
     }
 } else {
     // Default to admin dashboard if role is not set
-    header('Location: admin/dashboard_working.php');
+    header('Location: admin/dashboard.php');
 }
 exit;
 ?>

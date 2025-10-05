@@ -1,0 +1,21 @@
+RewriteEngine On
+
+# Simple test rule
+RewriteRule ^test-dashboard/?$ debug-navigation.php [L,QSA]
+
+# Dashboard route
+RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+
+# Admin routes - simplified
+RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
+
+# Student routes - simplified  
+RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
+
+# Login routes
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^student-login/?$ student-login.php [L,QSA]
+
+# Profile and logout routes
+RewriteRule ^profile/?$ profile.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]

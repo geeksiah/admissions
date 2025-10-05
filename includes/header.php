@@ -16,7 +16,7 @@ if (!isset($security) && class_exists('Security')) {
 
 // Check if user is logged in (if session functions are available)
 if (function_exists('isLoggedIn') && !isLoggedIn()) {
-    header('Location: ../login.php');
+    header('Location: /login');
     exit;
 }
 

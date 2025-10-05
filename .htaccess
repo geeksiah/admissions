@@ -69,21 +69,16 @@
 # URL Rewriting Rules
 RewriteEngine On
 
-# Handle direct file access first
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
+# Test rules for debugging
+RewriteRule ^debug/?$ debug-navigation.php [L,QSA]
+RewriteRule ^test-dashboard/?$ test-dashboard.php [L,QSA]
 
-# Handle direct directory access
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+# Dashboard route
+RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
 
 # Admin routes
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
-
-# Legacy dashboard routes -> unified dashboard
-RewriteRule ^admin/(dashboard_absolute|dashboard_working|dashboard_php84)\.php$ admin/dashboard.php [L,R=302]
-RewriteRule ^admin/login/?$ login.php [L,R=302]
 
 # Student routes
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
@@ -97,9 +92,6 @@ RewriteRule ^api/([^/]+)/([^/]+)/?$ api/$1.php?action=$2 [L,QSA]
 RewriteRule ^verify/([^/]+)/?$ verify-email.php?token=$1 [L,QSA]
 RewriteRule ^download/([^/]+)/?$ student/download-application.php?id=$1 [L,QSA]
 
-# Dashboard route
-RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
-
 # Login routes
 RewriteRule ^login/?$ login.php [L,QSA]
 RewriteRule ^student-login/?$ student-login.php [L,QSA]
@@ -107,11 +99,6 @@ RewriteRule ^student-login/?$ student-login.php [L,QSA]
 # Profile and logout routes
 RewriteRule ^profile/?$ profile.php [L,QSA]
 RewriteRule ^logout/?$ logout.php [L,QSA]
-
-# Default route - redirect everything else to index.php
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [L,QSA]
 
 # PHP Settings
 <IfModule mod_php.c>

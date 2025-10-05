@@ -42,8 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     // Attempt authentication using User model
                     require_once 'models/User.php';
-                    $pdo = $database->getConnection();
-                    $userModel = new User($pdo);
+                    $userModel = new User($database);
                     $user = $userModel->authenticate($username, $password);
                     
                     if ($user) {
