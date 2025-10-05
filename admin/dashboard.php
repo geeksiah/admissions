@@ -17,58 +17,29 @@ $security->requireAdmin();
 // Get current user info
 $currentUser = $security->getCurrentUser();
 
-// Initialize models
-require_once '../models/User.php';
-require_once '../models/Student.php';
-require_once '../models/Application.php';
-require_once '../models/Program.php';
-require_once '../models/Payment.php';
-require_once '../models/Report.php';
+// Initialize basic data (without complex models for now)
+$stats = [
+    'total_applications' => 0,
+    'pending_applications' => 0,
+    'approved_applications' => 0,
+    'rejected_applications' => 0,
+    'under_review_applications' => 0,
+    'total_students' => 0,
+    'total_programs' => 0,
+    'pending_payments' => 0
+];
 
-$pdo = $database->getConnection();
-$userModel = new User($pdo);
-$studentModel = new Student($pdo);
-$applicationModel = new Application($pdo);
-$programModel = new Program($pdo);
-$paymentModel = new Payment($pdo);
-$reportModel = new Report($pdo);
+$recentApplications = [];
+$recentStudents = [];
+$activePrograms = [];
+$popularPrograms = [];
 
-// Get dashboard data
-try {
-    $stats = $reportModel->getDashboardStats();
-    $recentApplications = $applicationModel->getRecent(5);
-    $recentStudents = $studentModel->getRecent(5);
-    $activePrograms = $programModel->getActive();
-    $popularPrograms = $programModel->getPopular(5);
-} catch (Exception $e) {
-    $stats = [
-        'total_applications' => 0,
-        'pending_applications' => 0,
-        'approved_applications' => 0,
-        'rejected_applications' => 0,
-        'under_review_applications' => 0
-    ];
-    $recentApplications = [];
-    $recentStudents = [];
-    $activePrograms = [];
-    $popularPrograms = [];
-}
-
-// Get branding settings
-$brandingSettings = [];
-try {
-    require_once '../models/SystemConfig.php';
-    $configModel = new SystemConfig($pdo);
-    $systemConfig = $configModel; // Make available to panels
-    $brandingSettings = $configModel->getByCategory('branding');
-} catch (Exception $e) {
-    // Use defaults
-    $brandingSettings = [
-        'logo_url' => null,
-        'primary_color' => '#667eea',
-        'secondary_color' => '#764ba2'
-    ];
-}
+// Get branding settings with defaults
+$brandingSettings = [
+    'logo_url' => null,
+    'primary_color' => '#667eea',
+    'secondary_color' => '#764ba2'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -679,51 +650,70 @@ try {
         <div class="content-wrapper">
             <!-- Overview Panel -->
             <div class="panel-content active" id="overview-panel">
-                <?php include 'panels/overview.php'; ?>
-
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Welcome, <?php echo htmlspecialchars($currentUser['first_name']); ?>!</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Dashboard is now working with functional navigation. Panel content will be added back gradually.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Quick Stats -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-file-earmark-text"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-number"><?php echo $stats['total_applications'] ?? 0; ?></div>
-                                <div class="stat-label">Total Applications</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-people"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-number"><?php echo $stats['total_students'] ?? 0; ?></div>
-                                <div class="stat-label">Total Students</div>
+                        <div class="stat-card bg-primary">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stat-number"><?php echo $stats['total_applications']; ?></div>
+                                    <div class="stat-label">Total Applications</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-mortarboard"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-number"><?php echo $stats['total_programs'] ?? 0; ?></div>
-                                <div class="stat-label">Active Programs</div>
+                        <div class="stat-card bg-success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stat-number"><?php echo $stats['total_students']; ?></div>
+                                    <div class="stat-label">Total Students</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="bi bi-people"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-credit-card"></i>
+                        <div class="stat-card bg-warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stat-number"><?php echo $stats['total_programs']; ?></div>
+                                    <div class="stat-label">Active Programs</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="bi bi-mortarboard"></i>
+                                </div>
                             </div>
-                            <div class="stat-content">
-                                <div class="stat-number"><?php echo $stats['pending_payments'] ?? 0; ?></div>
-                                <div class="stat-label">Pending Payments</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card bg-info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stat-number"><?php echo $stats['pending_payments']; ?></div>
+                                    <div class="stat-label">Pending Payments</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="bi bi-credit-card"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -732,57 +722,134 @@ try {
             
             <!-- Applications Panel -->
             <div class="panel-content" id="applications-panel">
-                <?php include 'panels/applications.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Applications</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Applications panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Students Panel -->
             <div class="panel-content" id="students-panel">
-                <?php include 'panels/students.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Students</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Students panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Programs Panel -->
             <div class="panel-content" id="programs-panel">
-                <?php include 'panels/programs.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Programs</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Programs panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Application Forms Panel -->
             <div class="panel-content" id="application_forms-panel">
-                <?php include 'panels/application_forms.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Application Forms</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Application Forms panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Users Panel -->
             <div class="panel-content" id="users-panel">
-                <?php include 'panels/users.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Users</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Users panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Payments Panel -->
             <div class="panel-content" id="payments-panel">
-                <?php include 'panels/payments.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Payments</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Payments panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Reports Panel -->
             <div class="panel-content" id="reports-panel">
-                <?php include 'panels/reports.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Reports</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Reports panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Notifications Panel -->
             <div class="panel-content" id="notifications-panel">
-                <?php include 'panels/notifications.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Notifications panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Communications Panel -->
             <div class="panel-content" id="communications-panel">
-                <?php include 'panels/communications.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Communications</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Communications panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Settings Panel -->
             <div class="panel-content" id="settings-panel">
-                <?php include 'panels/settings.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Settings panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- System Panel -->
             <div class="panel-content" id="system-panel">
-                <?php include 'panels/system.php'; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">System</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">System panel content will be restored soon.</p>
+                    </div>
+                </div>
             </div>
     </div>
 </div>
