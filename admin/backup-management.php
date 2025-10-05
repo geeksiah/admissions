@@ -11,8 +11,8 @@ requireRole(['admin']);
 
 $pageTitle = 'Backup & Recovery Management';
 $breadcrumbs = [
-    ['name' => 'Dashboard', 'url' => '/dashboard.php'],
-    ['name' => 'Backup Management', 'url' => '/admin/backup-management.php']
+    ['name' => 'Dashboard', 'url' => '/dashboard'],
+    ['name' => 'Backup Management', 'url' => '/admin/backup-management']
 ];
 
 // Initialize backup manager

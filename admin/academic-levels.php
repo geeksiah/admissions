@@ -10,8 +10,8 @@ requireRole(['admin', 'admissions_officer']);
 
 $pageTitle = 'Academic Levels Management';
 $breadcrumbs = [
-    ['name' => 'Dashboard', 'url' => '/dashboard.php'],
-    ['name' => 'Academic Levels', 'url' => '/admin/academic-levels.php']
+    ['name' => 'Dashboard', 'url' => '/dashboard'],
+    ['name' => 'Academic Levels', 'url' => '/admin/academic-levels']
 ];
 
 // Handle form submissions

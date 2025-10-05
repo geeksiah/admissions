@@ -69,31 +69,44 @@
 # URL Rewriting Rules
 RewriteEngine On
 
-# Admin routes - only rewrite if file doesn't exist
-RewriteCond %{REQUEST_FILENAME} !-f
+# Handle direct file access first
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Handle direct directory access
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Admin routes
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
-RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
 
 # Legacy dashboard routes -> unified dashboard
 RewriteRule ^admin/(dashboard_absolute|dashboard_working|dashboard_php84)\.php$ admin/dashboard.php [L,R=302]
 RewriteRule ^admin/login/?$ login.php [L,R=302]
 
-# Student routes - only rewrite if file doesn't exist
-RewriteCond %{REQUEST_FILENAME} !-f
+# Student routes
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
-RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^student/([^/]+)/([^/]+)/?$ student/$1.php?action=$2 [L,QSA]
 
-# API routes - only rewrite if file doesn't exist
-RewriteCond %{REQUEST_FILENAME} !-f
+# API routes
 RewriteRule ^api/([^/]+)/?$ api/$1.php [L,QSA]
-RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api/([^/]+)/([^/]+)/?$ api/$1.php?action=$2 [L,QSA]
 
 # Special routes
 RewriteRule ^verify/([^/]+)/?$ verify-email.php?token=$1 [L,QSA]
-RewriteRule ^download/([^/]+)/?$ download-application.php?id=$1 [L,QSA]
+RewriteRule ^download/([^/]+)/?$ student/download-application.php?id=$1 [L,QSA]
+
+# Dashboard route
+RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+
+# Login routes
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^student-login/?$ student-login.php [L,QSA]
+
+# Profile and logout routes
+RewriteRule ^profile/?$ profile.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
 
 # Default route - redirect everything else to index.php
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -34,37 +34,37 @@ $navigationItems = [];
 switch ($currentUser['role']) {
     case 'admin':
         $navigationItems = [
-            ['name' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'bi-speedometer2'],
-            ['name' => 'Applications', 'url' => '/admin/applications.php', 'icon' => 'bi-file-text'],
-            ['name' => 'Students', 'url' => '/admin/students.php', 'icon' => 'bi-people'],
-            ['name' => 'Programs', 'url' => '/admin/programs.php', 'icon' => 'bi-mortarboard'],
-            ['name' => 'Users', 'url' => '/admin/users.php', 'icon' => 'bi-person-gear'],
-            ['name' => 'Reports', 'url' => '/admin/reports.php', 'icon' => 'bi-graph-up'],
-            ['name' => 'Settings', 'url' => '/admin/settings.php', 'icon' => 'bi-gear']
+            ['name' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'bi-speedometer2'],
+            ['name' => 'Applications', 'url' => '/admin/applications', 'icon' => 'bi-file-text'],
+            ['name' => 'Students', 'url' => '/admin/students', 'icon' => 'bi-people'],
+            ['name' => 'Programs', 'url' => '/admin/programs', 'icon' => 'bi-mortarboard'],
+            ['name' => 'Users', 'url' => '/admin/users', 'icon' => 'bi-person-gear'],
+            ['name' => 'Reports', 'url' => '/admin/reports', 'icon' => 'bi-graph-up'],
+            ['name' => 'Settings', 'url' => '/admin/settings', 'icon' => 'bi-gear']
         ];
         break;
     case 'admissions_officer':
         $navigationItems = [
-            ['name' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'bi-speedometer2'],
-            ['name' => 'Applications', 'url' => '/officer/applications.php', 'icon' => 'bi-file-text'],
-            ['name' => 'Students', 'url' => '/officer/students.php', 'icon' => 'bi-people'],
-            ['name' => 'Programs', 'url' => '/officer/programs.php', 'icon' => 'bi-mortarboard'],
-            ['name' => 'Reports', 'url' => '/officer/reports.php', 'icon' => 'bi-graph-up']
+            ['name' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'bi-speedometer2'],
+            ['name' => 'Applications', 'url' => '/admin/applications', 'icon' => 'bi-file-text'],
+            ['name' => 'Students', 'url' => '/admin/students', 'icon' => 'bi-people'],
+            ['name' => 'Programs', 'url' => '/admin/programs', 'icon' => 'bi-mortarboard'],
+            ['name' => 'Reports', 'url' => '/admin/reports', 'icon' => 'bi-graph-up']
         ];
         break;
     case 'reviewer':
         $navigationItems = [
-            ['name' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'bi-speedometer2'],
-            ['name' => 'My Reviews', 'url' => '/reviewer/reviews.php', 'icon' => 'bi-clipboard-check'],
-            ['name' => 'Applications', 'url' => '/reviewer/applications.php', 'icon' => 'bi-file-text']
+            ['name' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'bi-speedometer2'],
+            ['name' => 'My Reviews', 'url' => '/admin/applications', 'icon' => 'bi-clipboard-check'],
+            ['name' => 'Applications', 'url' => '/admin/applications', 'icon' => 'bi-file-text']
         ];
         break;
     case 'student':
         $navigationItems = [
-            ['name' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'bi-speedometer2'],
-            ['name' => 'My Applications', 'url' => '/student/applications.php', 'icon' => 'bi-file-text'],
-            ['name' => 'Apply Now', 'url' => '/student/apply.php', 'icon' => 'bi-plus-circle'],
-            ['name' => 'Programs', 'url' => '/student/programs.php', 'icon' => 'bi-mortarboard']
+            ['name' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'bi-speedometer2'],
+            ['name' => 'My Applications', 'url' => '/student/applications', 'icon' => 'bi-file-text'],
+            ['name' => 'Apply Now', 'url' => '/student/apply', 'icon' => 'bi-plus-circle'],
+            ['name' => 'Programs', 'url' => '/student/programs', 'icon' => 'bi-mortarboard']
         ];
         break;
 }
@@ -378,10 +378,10 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header"><?php echo $currentUser['first_name'] . ' ' . $currentUser['last_name']; ?></h6></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/profile.php"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="/settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="/admin/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>

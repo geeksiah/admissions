@@ -11,8 +11,8 @@ requireRole(['admin', 'admissions_officer']);
 
 $pageTitle = 'Application Requirements Management';
 $breadcrumbs = [
-    ['name' => 'Dashboard', 'url' => '/dashboard.php'],
-    ['name' => 'Application Requirements', 'url' => '/admin/application-requirements.php']
+    ['name' => 'Dashboard', 'url' => '/dashboard'],
+    ['name' => 'Application Requirements', 'url' => '/admin/application-requirements']
 ];
 
 // Handle form submissions
