@@ -1,0 +1,10 @@
+# Simple test .htaccess
+RewriteEngine On
+
+# Test basic routing
+RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
+RewriteRule ^test-simple/?$ admin/test-no-auth.php [L,QSA]
+
+# Basic routes
+RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+RewriteRule ^login/?$ login.php [L,QSA]
