@@ -1,0 +1,6 @@
+# Minimal .htaccess for testing
+RewriteEngine On
+
+# Only basic routes
+RewriteRule ^test-simple/?$ admin/simple-test.php [L,QSA]
+RewriteRule ^test-dashboard-ultra/?$ admin/dashboard-ultra-simple.php [L,QSA]

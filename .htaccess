@@ -66,43 +66,19 @@
     Deny from all
 </Directory>
 
-# URL Rewriting Rules
+# URL Rewriting Rules - Minimal Test Version
 RewriteEngine On
 
 # Test rules for debugging
-RewriteRule ^debug/?$ debug-navigation.php [L,QSA]
-RewriteRule ^test-dashboard/?$ test-dashboard.php [L,QSA]
-RewriteRule ^test-config/?$ test-config.php [L,QSA]
+RewriteRule ^test-rewrite/?$ test-rewrite.php [L,QSA]
+RewriteRule ^test-simple/?$ admin/simple-test.php [L,QSA]
+RewriteRule ^test-dashboard-ultra/?$ admin/dashboard-ultra-simple.php [L,QSA]
 
 # Dashboard route
 RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
 
 # Admin routes
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
-RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
-
-# Student routes
-RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
-RewriteRule ^student/([^/]+)/([^/]+)/?$ student/$1.php?action=$2 [L,QSA]
-
-# API routes
-RewriteRule ^api/([^/]+)/?$ api/$1.php [L,QSA]
-RewriteRule ^api/([^/]+)/([^/]+)/?$ api/$1.php?action=$2 [L,QSA]
-
-# Special routes
-RewriteRule ^verify/([^/]+)/?$ verify-email.php?token=$1 [L,QSA]
-RewriteRule ^download/([^/]+)/?$ student/download-application.php?id=$1 [L,QSA]
-
-# Login routes
-RewriteRule ^login/?$ login.php [L,QSA]
-RewriteRule ^student-login/?$ student-login.php [L,QSA]
-
-# Profile and logout routes
-RewriteRule ^profile/?$ profile.php [L,QSA]
-RewriteRule ^logout/?$ logout.php [L,QSA]
-
-# Unauthorized route
-RewriteRule ^unauthorized-simple/?$ unauthorized-simple.php [L,QSA]
 
 # PHP Settings
 <IfModule mod_php.c>
