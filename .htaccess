@@ -10,69 +10,53 @@
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self';"
 </IfModule>
 
-# Prevent access to sensitive files
+# Prevent access to sensitive files - Hostinger compatible
 <FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|sql|lock)$">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
-# Prevent access to config directory
+# Prevent access to sensitive directories - Hostinger compatible
 <Directory "config">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to classes directory
 <Directory "classes">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to models directory
 <Directory "models">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to cron directory
 <Directory "cron">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to uploads directory (except for specific file types)
 <Directory "uploads">
     <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
-        Order Allow,Deny
-        Deny from all
+        Require all denied
     </FilesMatch>
 </Directory>
 
-# Prevent access to backups directory
 <Directory "backups">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to logs directory
 <Directory "logs">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# Prevent access to cache directory
 <Directory "cache">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Directory>
 
-# URL Rewriting Rules - Minimal Test Version
+# URL Rewriting Rules - Hostinger Compatible
 RewriteEngine On
 
-# Test rules for debugging
-RewriteRule ^test-rewrite/?$ test-rewrite.php [L,QSA]
+# Test routes for debugging
+RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
 RewriteRule ^test-simple/?$ admin/simple-test.php [L,QSA]
-RewriteRule ^test-dashboard-ultra/?$ admin/dashboard-ultra-simple.php [L,QSA]
+RewriteRule ^test-direct/?$ admin/test-direct.php [L,QSA]
 
 # Dashboard route
 RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
@@ -80,17 +64,20 @@ RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
 # Admin routes
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 
-# PHP Settings
-<IfModule mod_php.c>
-    php_value display_errors Off
-    php_value upload_max_filesize 10M
-    php_value post_max_size 12M
-    php_value memory_limit 256M
-    php_value max_execution_time 300
-    php_value max_input_time 300
-    php_value session.gc_maxlifetime 3600
-    php_value session.cookie_lifetime 0
-</IfModule>
+# Student routes  
+RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
+
+# Basic routes
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+RewriteRule ^profile/?$ profile.php [L,QSA]
+
+# PHP Settings - Hostinger compatible
+php_value display_errors On
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+php_value memory_limit 256M
+php_value max_execution_time 300
 
 # Compression
 <IfModule mod_deflate.c>
