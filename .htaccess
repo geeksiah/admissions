@@ -65,6 +65,7 @@ RewriteEngine On
 # Test routes
 RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
 RewriteRule ^test-navigation/?$ test-navigation.php [L,QSA]
+RewriteRule ^test-admin-simple/?$ test-admin-simple.php [L,QSA]
 RewriteRule ^test-admin/?$ admin/test-admin.php [L,QSA]
 
 # Main routes
