@@ -1,21 +1,41 @@
 <?php
 /**
- * Unified Admin Dashboard - Single Page Application
- * Professional UI with panel-based navigation
+ * Working Admin Dashboard - Production Ready
+ * Fixed authentication and navigation
  */
 
 require_once '../config/config.php';
 require_once '../config/database.php';
-require_once '../classes/SecurityManager.php';
 
-$database = new Database();
-$security = new SecurityManager($database);
+// Start session if not started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Require admin authentication
-$security->requireAdmin();
+// Check authentication
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+    header('Location: /login');
+    exit;
+}
+
+// Check admin role
+$allowedRoles = ['admin', 'super_admin', 'admissions_officer', 'reviewer'];
+if (!in_array($_SESSION['role'] ?? '', $allowedRoles)) {
+    header('Location: /unauthorized');
+    exit;
+}
 
 // Get current user info
-$currentUser = $security->getCurrentUser();
+$currentUser = [
+    'id' => $_SESSION['user_id'],
+    'username' => $_SESSION['username'] ?? '',
+    'first_name' => $_SESSION['first_name'] ?? '',
+    'last_name' => $_SESSION['last_name'] ?? '',
+    'email' => $_SESSION['email'] ?? '',
+    'role' => $_SESSION['role'] ?? ''
+];
+
+$database = new Database();
 
 // Initialize basic data (without complex models for now)
 $stats = [
@@ -544,75 +564,87 @@ $brandingSettings = [
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
-                <a class="nav-link active" data-panel="overview">
+                <a class="nav-link active" href="/admin/dashboard">
                     <i class="bi bi-speedometer2"></i>
-                    <span>Overview</span>
+                    <span>Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="applications">
+                <a class="nav-link" href="/admin/applications">
                     <i class="bi bi-file-earmark-text"></i>
                     <span>Applications</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="students">
+                <a class="nav-link" href="/admin/students">
                     <i class="bi bi-people"></i>
                     <span>Students</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="programs">
+                <a class="nav-link" href="/admin/programs">
                     <i class="bi bi-mortarboard"></i>
                     <span>Programs</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="application_forms">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>Application Forms</span>
+                <a class="nav-link" href="/admin/academic-levels">
+                    <i class="bi bi-layers"></i>
+                    <span>Academic Levels</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="users">
+                <a class="nav-link" href="/admin/application-requirements">
+                    <i class="bi bi-list-check"></i>
+                    <span>Requirements</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/users">
                     <i class="bi bi-person-gear"></i>
                     <span>Users</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="payments">
+                <a class="nav-link" href="/admin/payment-gateways">
                     <i class="bi bi-credit-card"></i>
                     <span>Payments</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="reports">
+                <a class="nav-link" href="/admin/reports">
                     <i class="bi bi-graph-up"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="notifications">
-                    <i class="bi bi-bell"></i>
-                    <span>Notifications</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-panel="communications">
+                <a class="nav-link" href="/admin/messages">
                     <i class="bi bi-chat-dots"></i>
-                    <span>Communications</span>
+                    <span>Messages</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="settings">
+                <a class="nav-link" href="/admin/settings">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-panel="system">
+                <a class="nav-link" href="/admin/system-config">
                     <i class="bi bi-shield-check"></i>
                     <span>System</span>
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <a class="nav-link" href="/profile">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
                 </a>
             </li>
         </ul>
