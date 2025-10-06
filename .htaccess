@@ -59,13 +59,34 @@
     Deny from all
 </Directory>
 
-# URL Rewriting Rules - Ultra Minimal LiteSpeed
+# URL Rewriting Rules - Complete LiteSpeed
 RewriteEngine On
 
-# Test routes only
+# Test routes
 RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
+RewriteRule ^test-navigation/?$ test-navigation.php [L,QSA]
+RewriteRule ^test-admin/?$ admin/test-admin.php [L,QSA]
+
+# Main routes
 RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
 RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+RewriteRule ^profile/?$ profile.php [L,QSA]
+
+# Admin routes
+RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
+RewriteRule ^admin/([^/]+)/([^/]+)/?$ admin/$1.php?action=$2 [L,QSA]
+
+# Student routes
+RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
+RewriteRule ^student/([^/]+)/([^/]+)/?$ student/$1.php?action=$2 [L,QSA]
+
+# API routes
+RewriteRule ^api/([^/]+)/?$ api/$1.php [L,QSA]
+
+# Special routes
+RewriteRule ^verify/([^/]+)/?$ verify-email.php?token=$1 [L,QSA]
+RewriteRule ^download/([^/]+)/?$ student/download-application.php?id=$1 [L,QSA]
 
 # PHP Settings - Hostinger compatible
 php_value display_errors On
