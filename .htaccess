@@ -10,67 +10,62 @@
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self';"
 </IfModule>
 
-# Prevent access to sensitive files - Hostinger compatible
+# Prevent access to sensitive files - LiteSpeed compatible
 <FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|sql|lock)$">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </FilesMatch>
 
-# Prevent access to sensitive directories - Hostinger compatible
+# Prevent access to sensitive directories - LiteSpeed compatible
 <Directory "config">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "classes">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "models">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "cron">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "uploads">
     <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
-        Require all denied
+        Order Allow,Deny
+        Deny from all
     </FilesMatch>
 </Directory>
 
 <Directory "backups">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "logs">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
 <Directory "cache">
-    Require all denied
+    Order Allow,Deny
+    Deny from all
 </Directory>
 
-# URL Rewriting Rules - Hostinger Compatible
+# URL Rewriting Rules - Ultra Minimal LiteSpeed
 RewriteEngine On
 
-# Test routes for debugging
+# Test routes only
 RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
-RewriteRule ^test-simple/?$ admin/simple-test.php [L,QSA]
-RewriteRule ^test-direct/?$ admin/test-direct.php [L,QSA]
-
-# Dashboard route
 RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
-
-# Admin routes
-RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
-
-# Student routes  
-RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
-
-# Basic routes
 RewriteRule ^login/?$ login.php [L,QSA]
-RewriteRule ^logout/?$ logout.php [L,QSA]
-RewriteRule ^profile/?$ profile.php [L,QSA]
 
 # PHP Settings - Hostinger compatible
 php_value display_errors On

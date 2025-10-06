@@ -1,0 +1,32 @@
+# LiteSpeed-compatible .htaccess
+RewriteEngine On
+
+# Basic URL rewriting - LiteSpeed compatible
+RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+RewriteRule ^profile/?$ profile.php [L,QSA]
+
+# Admin routes
+RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
+
+# Student routes  
+RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
+
+# Test routes
+RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
+RewriteRule ^test-simple/?$ admin/simple-test.php [L,QSA]
+RewriteRule ^test-direct/?$ admin/test-direct.php [L,QSA]
+
+# Basic security - LiteSpeed compatible
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|sql|lock)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# PHP settings - LiteSpeed compatible
+php_value display_errors On
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+php_value memory_limit 256M
+php_value max_execution_time 300
