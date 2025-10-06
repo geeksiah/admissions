@@ -37,6 +37,7 @@
     Deny from all
 </Directory>
 
+# Prevent execution of scripts in uploads directory
 <Directory "uploads">
     <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
         Order Allow,Deny
@@ -59,7 +60,7 @@
     Deny from all
 </Directory>
 
-# URL Rewriting Rules - Simple Test
+# URL Rewriting Rules
 RewriteEngine On
 
 # Test routes
@@ -82,12 +83,14 @@ RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
 # Special routes
 RewriteRule ^unauthorized/?$ unauthorized.php [L,QSA]
 
-# PHP Settings - Hostinger compatible
-php_value display_errors On
-php_value upload_max_filesize 10M
-php_value post_max_size 12M
-php_value memory_limit 256M
-php_value max_execution_time 300
+# PHP Settings
+<IfModule mod_php.c>
+    php_value display_errors On
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value memory_limit 256M
+    php_value max_execution_time 300
+</IfModule>
 
 # Compression
 <IfModule mod_deflate.c>
