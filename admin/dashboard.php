@@ -953,15 +953,7 @@ $brandingSettings = [
                 window.history.pushState({}, '', url);
             };
             
-            // Add click event listeners to navigation links
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetPanel = this.getAttribute('data-panel');
-                    console.log('Navigation clicked:', targetPanel);
-                    showPanel(targetPanel);
-                });
-            });
+            // Navigation links now use direct href - no need for click handlers
             
             // Handle browser back/forward buttons
             window.addEventListener('popstate', function(e) {
