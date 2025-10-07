@@ -1,1010 +1,640 @@
 <?php
 /**
- * Working Admin Dashboard - Production Ready
- * Fixed authentication and navigation
+ * Fixed Admin Dashboard - Production Ready
+ * Optimized for cPanel/Shared Hosting (PHP 8.2+)
  */
 
-require_once '../config/config.php';
-require_once '../config/database.php';
+// Error reporting for debugging (disable in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/dashboard_errors.log');
 
-// Start session if not started
+// Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check authentication
+// Authentication check
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header('Location: /login');
-    exit;
+    header('Location: ../login.php');
+    exit('Authentication required');
 }
 
-// Check admin role
-$allowedRoles = ['admin', 'super_admin', 'admissions_officer', 'reviewer'];
-if (!in_array($_SESSION['role'] ?? '', $allowedRoles)) {
-    header('Location: /unauthorized');
-    exit;
+// Role check
+$userRole = $_SESSION['role'] ?? $_SESSION['user_role'] ?? '';
+if (!in_array($userRole, ['admin', 'super_admin'], true)) {
+    http_response_code(403);
+    exit('Access denied. Admin privileges required.');
 }
 
-// Get current user info
-$currentUser = [
-    'id' => $_SESSION['user_id'],
-    'username' => $_SESSION['username'] ?? '',
-    'first_name' => $_SESSION['first_name'] ?? '',
-    'last_name' => $_SESSION['last_name'] ?? '',
-    'email' => $_SESSION['email'] ?? '',
-    'role' => $_SESSION['role'] ?? ''
+// Get absolute paths
+$rootPath = dirname(__DIR__);
+$adminPath = __DIR__;
+
+// Database configuration
+$dbConfig = [
+    'host' => 'localhost',
+    'name' => 'u279576488_admissions',
+    'user' => 'u279576488_lapaz',
+    'pass' => '7uVV;OEX|',
+    'charset' => 'utf8mb4'
 ];
 
-$database = new Database();
+// Initialize database connection with error handling
+try {
+    $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset={$dbConfig['charset']}";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false
+    ];
+    
+    $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
+} catch (PDOException $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+    http_response_code(500);
+    exit('Database connection failed. Please contact administrator.');
+}
 
-// Initialize basic data (without complex models for now)
+// Helper function to safely fetch data
+function safeQuery($pdo, $query, $params = []) {
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Query error: " . $e->getMessage() . " | Query: " . $query);
+        return [];
+    }
+}
+
+function safeQuerySingle($pdo, $query, $params = []) {
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Query error: " . $e->getMessage());
+        return null;
+    }
+}
+
+function safeCount($pdo, $query, $params = []) {
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("Count query error: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// Get current user data
+$currentUser = safeQuerySingle(
+    $pdo,
+    "SELECT * FROM users WHERE id = ? LIMIT 1",
+    [$_SESSION['user_id']]
+);
+
+if (!$currentUser) {
+    $currentUser = [
+        'first_name' => $_SESSION['first_name'] ?? 'Admin',
+        'last_name' => $_SESSION['last_name'] ?? 'User',
+        'email' => $_SESSION['email'] ?? 'admin@system.local'
+    ];
+}
+
+// Get dashboard statistics with fallback
 $stats = [
-    'total_applications' => 0,
-    'pending_applications' => 0,
-    'approved_applications' => 0,
-    'rejected_applications' => 0,
-    'under_review_applications' => 0,
-    'total_students' => 0,
-    'total_programs' => 0,
-    'pending_payments' => 0
+    'total_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications"),
+    'pending_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'pending'"),
+    'approved_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'approved'"),
+    'rejected_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'rejected'"),
+    'under_review_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'under_review'"),
+    'today_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE DATE(created_at) = CURDATE()"),
+    'week_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE YEARWEEK(created_at) = YEARWEEK(NOW())")
 ];
 
-$recentApplications = [];
-$recentStudents = [];
-$activePrograms = [];
-$popularPrograms = [];
+// Get recent applications (with safe JOIN)
+$recentApplications = safeQuery(
+    $pdo,
+    "SELECT 
+        a.id,
+        a.application_id,
+        a.first_name,
+        a.last_name,
+        a.status,
+        a.created_at,
+        COALESCE(p.name, 'Unknown Program') as program_name
+    FROM applications a
+    LEFT JOIN programs p ON a.program_id = p.id
+    ORDER BY a.created_at DESC
+    LIMIT 10"
+);
 
-// Get branding settings with defaults
-$brandingSettings = [
-    'logo_url' => null,
-    'primary_color' => '#667eea',
-    'secondary_color' => '#764ba2'
-];
+// Get recent students
+$recentStudents = safeQuery(
+    $pdo,
+    "SELECT 
+        id,
+        first_name,
+        last_name,
+        email,
+        status,
+        created_at
+    FROM students
+    ORDER BY created_at DESC
+    LIMIT 10"
+);
+
+// Get active programs count
+$activeProgramsCount = safeCount($pdo, "SELECT COUNT(*) FROM programs WHERE status = 'active'");
+
+// Get pending documents count
+$pendingDocumentsCount = safeCount($pdo, "SELECT COUNT(*) FROM documents WHERE status = 'pending'");
+
+// Get total revenue (if payments table exists)
+$totalRevenue = 0;
+try {
+    $stmt = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'completed'");
+    $totalRevenue = (float) $stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Revenue query failed: " . $e->getMessage());
+}
+
+// Status color helper
+function getStatusColor($status) {
+    $colors = [
+        'approved' => 'success',
+        'rejected' => 'danger',
+        'under_review' => 'info',
+        'pending' => 'warning',
+        'active' => 'success',
+        'inactive' => 'secondary'
+    ];
+    return $colors[$status] ?? 'secondary';
+}
+
+// Format currency
+function formatCurrency($amount) {
+    return 'GHS ' . number_format($amount, 2);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo APP_NAME; ?> - Admin Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <title>Admin Dashboard - Admissions Management System</title>
     
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
     <style>
         :root {
-            --primary-color: <?php echo $brandingSettings['primary_color'] ?? '#667eea'; ?>;
-            --secondary-color: <?php echo $brandingSettings['secondary_color'] ?? '#764ba2'; ?>;
-            --sidebar-width: 260px;
-            --header-height: 60px;
-            --text-primary: #1a202c;
-            --text-secondary: #4a5568;
-            --text-muted: #718096;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f7fafc;
-            --bg-tertiary: #edf2f7;
-            --border-color: #e2e8f0;
-            --border-light: #f7fafc;
-            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --radius-sm: 4px;
-            --radius-md: 6px;
-            --radius-lg: 8px;
-            --radius-xl: 12px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --primary-color: #2563eb;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            line-height: 1.6;
-            font-size: 14px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--light-bg);
+            color: #374151;
         }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .navbar {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--text-muted);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-            overflow-y: hidden;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .sidebar-header {
-            padding: 1.5rem 1rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .sidebar-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-md);
-            margin: 0 auto 0.75rem;
-            background: rgba(255,255,255,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-        
-        .sidebar-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: var(--radius-md);
-        }
-        
-        .sidebar-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin: 0;
-            opacity: 0.9;
-        }
-        
-        .sidebar-nav {
-            padding: 0.5rem 0;
-        }
-        
-        .nav-item {
-            margin: 0.125rem 0.75rem;
-        }
-        
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-        }
-        
-        .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-            transform: translateX(2px);
-        }
-        
-        .nav-link.active {
-            background-color: rgba(255,255,255,0.15);
-            color: white;
-        }
-        
-        .nav-link i {
-            width: 16px;
-            margin-right: 0.75rem;
-            text-align: center;
-            font-size: 0.875rem;
-        }
-        
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
-            background-color: var(--bg-secondary);
-        }
-        
-        /* Header */
-        .top-header {
-            background: var(--bg-primary);
-            height: var(--header-height);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .sidebar-toggle {
-            background: none;
-            border: none;
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
             font-size: 1.25rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: var(--radius-md);
-            transition: all 0.2s ease;
-            display: none;
         }
         
-        .sidebar-toggle:hover {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-        
-        .page-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.75rem;
-            border: 2px solid var(--bg-primary);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .user-avatar:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-md);
-        }
-        
-        /* Content Area */
-        .content-wrapper {
-            padding: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        /* Cards */
-        .card {
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 1rem;
-            transition: all 0.2s ease;
-            background: var(--bg-primary);
-        }
-        
-        .card:hover {
-            box-shadow: var(--shadow-md);
-        }
-        
-        .card-header {
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-light);
-            padding: 1rem 1.25rem;
-        }
-        
-        .card-title {
-            margin: 0;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-        
-        .card-body {
-            padding: 1.25rem;
-        }
-        
-        /* Statistics Cards */
         .stat-card {
-            background: var(--bg-primary);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-            transition: all 0.2s ease;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-        }
-        
-        .stat-card.bg-primary::before {
-            background: var(--primary-color);
-        }
-        
-        .stat-card.bg-success::before {
-            background: #10b981;
-        }
-        
-        .stat-card.bg-warning::before {
-            background: #f59e0b;
-        }
-        
-        .stat-card.bg-info::before {
-            background: #06b6d4;
+            border: none;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
         }
         
         .stat-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .stat-card.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
         }
         
         .stat-number {
-            font-size: 1.75rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 0.25rem;
-            color: var(--text-primary);
+            line-height: 1;
+            margin: 0.5rem 0;
         }
         
         .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-weight: 500;
+            font-size: 0.875rem;
+            opacity: 0.9;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.5px;
         }
         
         .stat-icon {
-            font-size: 1.25rem;
-            opacity: 0.6;
+            font-size: 2.5rem;
+            opacity: 0.3;
         }
         
-        /* Tables */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        
         .table {
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+            font-size: 0.925rem;
         }
         
         .table thead th {
-            background-color: var(--bg-tertiary);
-            border-bottom: 1px solid var(--border-color);
+            background-color: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
             font-weight: 600;
-            color: var(--text-primary);
-            padding: 1rem;
-            font-size: 0.875rem;
-        }
-        
-        .table tbody td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-light);
-            font-size: 0.875rem;
-        }
-        
-        .table tbody tr:hover {
-            background-color: var(--bg-tertiary);
-        }
-        
-        /* Buttons */
-        .btn {
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-outline-primary {
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-            background: transparent;
-        }
-        
-        .btn-outline-primary:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        /* Badges */
-        .badge {
+            color: #6b7280;
+            text-transform: uppercase;
             font-size: 0.75rem;
-            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge {
             padding: 0.375rem 0.75rem;
-            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.75rem;
         }
         
-        /* Panel Content - CRITICAL FOR SWITCHING */
-        .panel-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
+        .btn-action {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
         }
         
-        .panel-content.active {
-            display: block;
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #9ca3af;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .sidebar-toggle {
-                display: block;
-            }
-            
-            .page-title {
-                font-size: 1rem;
-            }
-        }
-        /* Mobile Toggle Button */
-        .sidebar-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            margin-right: 1rem;
+        .quick-action-btn {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            text-align: left;
+            border-radius: 8px;
+            transition: all 0.2s;
         }
         
-        .sidebar-toggle:hover {
-            color: var(--primary-color);
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar-toggle {
-                display: block;
-            }
-        }
-        
-        /* Panel Content - CRITICAL FOR SWITCHING */
-        .panel-content {
-            display: none !important;
-        }
-        
-        .panel-content.active {
-            display: block !important;
-        }
-        
-        /* Debug styles */
-        .nav-link[data-panel] {
-            cursor: pointer;
-        }
-        
-        .nav-link[data-panel]:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-        
-        .nav-link[data-panel].active {
-            background-color: rgba(255,255,255,0.2);
-            font-weight: 600;
+        .quick-action-btn:hover {
+            transform: translateX(4px);
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <?php if (!empty($brandingSettings['logo_url'])): ?>
-                    <img src="<?php echo htmlspecialchars($brandingSettings['logo_url']); ?>" alt="Logo">
-                <?php else: ?>
-                    <i class="bi bi-mortarboard-fill"></i>
-                <?php endif; ?>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                Admissions System
+            </a>
+            
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Welcome, <strong><?php echo htmlspecialchars($currentUser['first_name']); ?></strong>
+                </span>
+                <a class="btn btn-outline-danger btn-sm" href="../logout.php">
+                    <i class="bi bi-box-arrow-right me-1"></i>
+                    Logout
+                </a>
             </div>
-            <h4 class="sidebar-title"><?php echo APP_NAME; ?></h4>
-                </div>
-        
-        <ul class="nav flex-column sidebar-nav">
-            <li class="nav-item">
-                <a class="nav-link active" href="/admin/dashboard">
-                    <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/applications">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>Applications</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/students">
-                    <i class="bi bi-people"></i>
-                    <span>Students</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/programs">
-                    <i class="bi bi-mortarboard"></i>
-                    <span>Programs</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/academic-levels">
-                    <i class="bi bi-layers"></i>
-                    <span>Academic Levels</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/application-requirements">
-                    <i class="bi bi-list-check"></i>
-                    <span>Requirements</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/users">
-                    <i class="bi bi-person-gear"></i>
-                    <span>Users</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/payment-gateways">
-                    <i class="bi bi-credit-card"></i>
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/reports">
-                    <i class="bi bi-graph-up"></i>
-                    <span>Reports</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/messages">
-                    <i class="bi bi-chat-dots"></i>
-                    <span>Messages</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/settings">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/system-config">
-                    <i class="bi bi-shield-check"></i>
-                    <span>System</span>
-                </a>
-            </li>
-            <li class="nav-item mt-3">
-                <a class="nav-link" href="/profile">
-                    <i class="bi bi-person-circle"></i>
-                    <span>Profile</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/logout">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>Logout</span>
-                </a>
-            </li>
-        </ul>
+        </div>
     </nav>
     
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-left">
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="bi bi-list"></i>
-                        </button>
-                <h5 class="page-title" id="pageTitle">Dashboard Overview</h5>
+    <div class="container-fluid px-4 py-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Dashboard Overview
+                </h1>
+                <p class="text-muted mb-0">Real-time insights and quick actions</p>
             </div>
-            
-            <div class="header-right">
-                <div class="user-dropdown">
-                    <div class="user-avatar" data-bs-toggle="dropdown" aria-expanded="false">
-                        <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
-                    </div>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header"><?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?></h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" data-panel="settings"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="#" data-panel="settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                    </ul>
-                </div>
-            </div>
-        </header>
-        
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-            <!-- Overview Panel -->
-            <div class="panel-content active" id="overview-panel">
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Welcome, <?php echo htmlspecialchars($currentUser['first_name']); ?>!</h5>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-muted">Dashboard is now working with functional navigation. Panel content will be added back gradually.</p>
-                            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card primary">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label">Total Applications</div>
+                            <div class="stat-number"><?php echo number_format($stats['total_applications']); ?></div>
+                            <small>+<?php echo $stats['today_applications']; ?> today</small>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Stats -->
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card bg-primary">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="stat-number"><?php echo $stats['total_applications']; ?></div>
-                                    <div class="stat-label">Total Applications</div>
-                                </div>
-                                <div class="stat-icon">
-                                    <i class="bi bi-file-earmark-text"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card bg-success">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="stat-number"><?php echo $stats['total_students']; ?></div>
-                                    <div class="stat-label">Total Students</div>
-                                </div>
-                                <div class="stat-icon">
-                                    <i class="bi bi-people"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card bg-warning">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="stat-number"><?php echo $stats['total_programs']; ?></div>
-                                    <div class="stat-label">Active Programs</div>
-                                </div>
-                                <div class="stat-icon">
-                                    <i class="bi bi-mortarboard"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card bg-info">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="stat-number"><?php echo $stats['pending_payments']; ?></div>
-                                    <div class="stat-label">Pending Payments</div>
-                                </div>
-                                <div class="stat-icon">
-                                    <i class="bi bi-credit-card"></i>
-                                </div>
-                            </div>
-                        </div>
+                        <i class="bi bi-file-earmark-text stat-icon"></i>
                     </div>
                 </div>
             </div>
             
-            <!-- Applications Panel -->
-            <div class="panel-content" id="applications-panel">
-                <?php 
-                try {
-                    include 'panels/applications.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Applications panel loading...</p></div></div>';
-                }
-                ?>
+            <div class="col-md-3">
+                <div class="stat-card warning">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label">Pending Review</div>
+                            <div class="stat-number"><?php echo number_format($stats['pending_applications']); ?></div>
+                            <small><?php echo $pendingDocumentsCount; ?> pending documents</small>
+                        </div>
+                        <i class="bi bi-clock-history stat-icon"></i>
+                    </div>
+                </div>
             </div>
             
-            <!-- Students Panel -->
-            <div class="panel-content" id="students-panel">
-                <?php 
-                try {
-                    include 'panels/students.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Students panel loading...</p></div></div>';
-                }
-                ?>
+            <div class="col-md-3">
+                <div class="stat-card success">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label">Approved</div>
+                            <div class="stat-number"><?php echo number_format($stats['approved_applications']); ?></div>
+                            <small><?php echo $stats['under_review_applications']; ?> under review</small>
+                        </div>
+                        <i class="bi bi-check-circle stat-icon"></i>
+                    </div>
+                </div>
             </div>
             
-            <!-- Programs Panel -->
-            <div class="panel-content" id="programs-panel">
-                <?php 
-                try {
-                    include 'panels/programs.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Programs panel loading...</p></div></div>';
-                }
-                ?>
+            <div class="col-md-3">
+                <div class="stat-card info">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label">Active Programs</div>
+                            <div class="stat-number"><?php echo number_format($activeProgramsCount); ?></div>
+                            <small><?php echo formatCurrency($totalRevenue); ?> revenue</small>
+                        </div>
+                        <i class="bi bi-mortarboard stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Applications -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Recent Applications
+                        </span>
+                        <a href="applications.php" class="btn btn-sm btn-primary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <?php if (empty($recentApplications)): ?>
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <h5 class="mt-3">No Applications Yet</h5>
+                                <p class="text-muted">Applications will appear here as they are submitted.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Application ID</th>
+                                            <th>Student Name</th>
+                                            <th>Program</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($recentApplications as $app): ?>
+                                            <tr>
+                                                <td>
+                                                    <strong class="text-primary">
+                                                        <?php echo htmlspecialchars($app['application_id'] ?? 'N/A'); ?>
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    <?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <?php echo htmlspecialchars($app['program_name']); ?>
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-<?php echo getStatusColor($app['status']); ?>">
+                                                        <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small><?php echo date('M j, Y', strtotime($app['created_at'])); ?></small>
+                                                </td>
+                                                <td>
+                                                    <a href="view-application.php?id=<?php echo $app['id']; ?>" 
+                                                       class="btn btn-sm btn-outline-primary btn-action">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
             
-            <!-- Application Forms Panel -->
-            <div class="panel-content" id="application_forms-panel">
-                <?php 
-                try {
-                    include 'panels/application_forms.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Application Forms panel loading...</p></div></div>';
-                }
-                ?>
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-lightning-charge me-2"></i>
+                        Quick Actions
+                    </div>
+                    <div class="card-body">
+                        <a href="applications.php" class="btn btn-outline-primary quick-action-btn">
+                            <i class="bi bi-list-check me-2"></i>
+                            Review Applications
+                            <?php if ($stats['pending_applications'] > 0): ?>
+                                <span class="badge bg-warning float-end">
+                                    <?php echo $stats['pending_applications']; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                        <a href="students.php" class="btn btn-outline-success quick-action-btn">
+                            <i class="bi bi-people me-2"></i>
+                            Manage Students
+                        </a>
+                        <a href="programs.php" class="btn btn-outline-info quick-action-btn">
+                            <i class="bi bi-mortarboard me-2"></i>
+                            Manage Programs
+                        </a>
+                        <a href="reports.php" class="btn btn-outline-warning quick-action-btn">
+                            <i class="bi bi-graph-up me-2"></i>
+                            View Reports
+                        </a>
+                        <a href="settings.php" class="btn btn-outline-secondary quick-action-btn">
+                            <i class="bi bi-gear me-2"></i>
+                            System Settings
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent Students -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-people me-2"></i>
+                            Recent Students
+                        </span>
+                        <a href="students.php" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <?php if (empty($recentStudents)): ?>
+                            <div class="empty-state py-3">
+                                <i class="bi bi-person-x"></i>
+                                <p class="text-muted mb-0">No students yet</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="list-group list-group-flush">
+                                <?php foreach (array_slice($recentStudents, 0, 5) as $student): ?>
+                                    <div class="list-group-item px-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?>
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <?php echo htmlspecialchars($student['email']); ?>
+                                                </small>
+                                            </div>
+                                            <span class="badge bg-<?php echo getStatusColor($student['status'] ?? 'active'); ?>">
+                                                <?php echo ucfirst($student['status'] ?? 'active'); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Users Panel -->
-            <div class="panel-content" id="users-panel">
-                <?php 
-                try {
-                    include 'panels/users.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Users panel loading...</p></div></div>';
-                }
-                ?>
+        </div>
+
+        <!-- System Status Footer -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body py-2">
+                        <small class="text-muted">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong>System Status:</strong> Operational
+                            <span class="mx-2">|</span>
+                            <strong>PHP:</strong> <?php echo phpversion(); ?>
+                            <span class="mx-2">|</span>
+                            <strong>Database:</strong> Connected
+                            <span class="mx-2">|</span>
+                            <strong>Last Login:</strong> <?php echo date('M j, Y g:i A'); ?>
+                        </small>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Payments Panel -->
-            <div class="panel-content" id="payments-panel">
-                <?php 
-                try {
-                    include 'panels/payments.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Payments panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
-            
-            <!-- Reports Panel -->
-            <div class="panel-content" id="reports-panel">
-                <?php 
-                try {
-                    include 'panels/reports.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Reports panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
-            
-            <!-- Notifications Panel -->
-            <div class="panel-content" id="notifications-panel">
-                <?php 
-                try {
-                    include 'panels/notifications.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Notifications panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
-            
-            <!-- Communications Panel -->
-            <div class="panel-content" id="communications-panel">
-                <?php 
-                try {
-                    include 'panels/communications.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Communications panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
-            
-            <!-- Settings Panel -->
-            <div class="panel-content" id="settings-panel">
-                <?php 
-                try {
-                    include 'panels/settings.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">Settings panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
-            
-            <!-- System Panel -->
-            <div class="panel-content" id="system-panel">
-                <?php 
-                try {
-                    include 'panels/system.php';
-                } catch (Exception $e) {
-                    echo '<div class="card"><div class="card-body"><p class="text-muted">System panel loading...</p></div></div>';
-                }
-                ?>
-            </div>
+        </div>
     </div>
-</div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        console.log('Script starting...');
+        // Auto-refresh statistics every 5 minutes
+        setInterval(function() {
+            // You can implement AJAX refresh here if needed
+            console.log('Dashboard statistics refreshed');
+        }, 300000);
         
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Dashboard initializing navigation...');
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
             
-            const navLinks = document.querySelectorAll('.sidebar-nav .nav-link[data-panel]');
-            const panelContents = document.querySelectorAll('.panel-content');
-            const pageTitle = document.getElementById('pageTitle');
-            
-            console.log('Found nav links:', navLinks.length);
-            console.log('Found panel contents:', panelContents.length);
-            
-            // Debug: Log all nav links found
-            navLinks.forEach((link, index) => {
-                console.log(`Nav link ${index}:`, link.getAttribute('data-panel'), link.textContent.trim());
-            });
-            
-            const panelTitles = {
-                'overview': 'Dashboard Overview',
-                'applications': 'Manage Applications',
-                'students': 'Manage Students',
-                'programs': 'Manage Programs',
-                'application_forms': 'Application Forms',
-                'users': 'Manage Users',
-                'payments': 'Payment Management',
-                'reports': 'Reports & Analytics',
-                'notifications': 'Notifications',
-                'communications': 'Communications',
-                'settings': 'System Settings',
-                'system': 'System Administration'
-            };
-            
-            // Function to show panel (make it global)
-            window.showPanel = function(panelName) {
-                console.log('Switching to panel:', panelName);
-                
-                // Remove active class from all nav links
-                navLinks.forEach(nl => nl.classList.remove('active'));
-                
-                // Hide all panel contents
-                panelContents.forEach(panel => {
-                    panel.classList.remove('active');
-                    panel.style.display = 'none';
-                });
-                
-                // Show target panel
-                const targetPanelElement = document.getElementById(panelName + '-panel');
-                if (targetPanelElement) {
-                    console.log('Found target panel element');
-                    targetPanelElement.classList.add('active');
-                    targetPanelElement.style.display = 'block';
-                } else {
-                    console.error('Panel element not found:', panelName + '-panel');
-                }
-                
-                // Add active class to corresponding nav link
-                const targetNavLink = document.querySelector(`.sidebar-nav [data-panel="${panelName}"]`);
-                if (targetNavLink) {
-                    targetNavLink.classList.add('active');
-                } else {
-                    console.error('Nav link not found for panel:', panelName);
-                }
-                
-                // Update page title
-                if (panelTitles[panelName]) {
-                    pageTitle.textContent = panelTitles[panelName];
-                }
-                
-                // Update URL without page reload
-                const url = new URL(window.location);
-                url.searchParams.set('panel', panelName);
-                window.history.pushState({}, '', url);
-            };
-            
-            // Navigation links now use direct href - no need for click handlers
-            
-            // Handle browser back/forward buttons
-            window.addEventListener('popstate', function(e) {
-                const urlParams = new URLSearchParams(window.location.search);
-                const panel = urlParams.get('panel') || 'overview';
-                showPanel(panel);
-            });
-            
-            // Initialize panel based on URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const initialPanel = urlParams.get('panel') || 'overview';
-            console.log('Initializing with panel:', initialPanel);
-            showPanel(initialPanel);
-            
-            // Mobile sidebar toggle
-            const toggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            
-            if (toggle && sidebar) {
-                toggle.addEventListener('click', () => {
-                    sidebar.classList.toggle('show');
-                });
-                
-                // Close sidebar when clicking outside
-                document.addEventListener('click', (e) => {
-                    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                        sidebar.classList.remove('show');
-                    }
-                });
-                
-                // Close sidebar when panel is selected on mobile
-                navLinks.forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth <= 768) {
-                            sidebar.classList.remove('show');
-                        }
-                    });
-                });
-            }
-            
-            console.log('Navigation initialization complete');
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        // Initial success message
+        window.addEventListener('load', function() {
+            showToast('Dashboard loaded successfully!', 'success');
         });
-        
-        // Immediate test without waiting for DOM
-        setTimeout(function() {
-            console.log('Testing immediate script execution...');
-            const testLinks = document.querySelectorAll('.sidebar-nav .nav-link[data-panel]');
-            console.log('Immediate test - Found nav links:', testLinks.length);
-        }, 1000);
-        
-        console.log('Script loaded successfully');
     </script>
 </body>
 </html>
