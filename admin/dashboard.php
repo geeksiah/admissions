@@ -27,21 +27,24 @@ if (!in_array($userRole, $allowedRoles)) {
     exit('Access denied. Admin privileges required.');
 }
 
-// Initialize database connection using proper config
+// Initialize database connection using proper config (fail-safe)
 try {
     $database = new Database();
     $pdo = $database->getConnection();
 } catch (Exception $e) {
-    error_log("Database connection failed: " . $e->getMessage());
-    http_response_code(500);
-    exit('Database connection failed. Please contact administrator.');
+    error_log("Database connection failed (dashboard fallback): " . $e->getMessage());
+    $pdo = null; // continue with safe fallbacks below
 }
 
 // Get current user data
 try {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
-    $stmt->execute([$_SESSION['user_id']]);
-    $currentUser = $stmt->fetch();
+    if ($pdo) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$_SESSION['user_id']]);
+        $currentUser = $stmt->fetch();
+    } else {
+        $currentUser = null;
+    }
 } catch (Exception $e) {
     error_log("User query failed: " . $e->getMessage());
     $currentUser = null;

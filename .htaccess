@@ -16,49 +16,15 @@
     Deny from all
 </FilesMatch>
 
-# Prevent access to sensitive directories - LiteSpeed compatible
-<Directory "config">
-    Order Allow,Deny
-    Deny from all
-</Directory>
+## Prevent access to sensitive directories (Directory is not allowed in .htaccess)
+## Use rewrite-based deny rules instead for shared hosting compatibility
+RewriteRule ^(config|classes|models|cron|backups|logs|cache)/ - [F,L]
 
-<Directory "classes">
-    Order Allow,Deny
-    Deny from all
-</Directory>
+## Prevent execution of scripts in uploads directory
+RewriteRule ^uploads/.*\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$ - [F,L]
 
-<Directory "models">
-    Order Allow,Deny
-    Deny from all
-</Directory>
-
-<Directory "cron">
-    Order Allow,Deny
-    Deny from all
-</Directory>
-
-# Prevent execution of scripts in uploads directory
-<Directory "uploads">
-    <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
-        Order Allow,Deny
-        Deny from all
-    </FilesMatch>
-</Directory>
-
-<Directory "backups">
-    Order Allow,Deny
-    Deny from all
-</Directory>
-
-<Directory "logs">
-    Order Allow,Deny
-    Deny from all
-</Directory>
-
-<Directory "cache">
-    Order Allow,Deny
-    Deny from all
-</Directory>
+## Additional explicit denies (redundant with the first rule, but left for clarity)
+RewriteRule ^(backups|logs|cache)/ - [F,L]
 
 # URL Rewriting Rules
 RewriteEngine On
