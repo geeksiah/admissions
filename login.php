@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $db = new Database();
             $pdo = $db->getConnection();
-            $stmt = $pdo->prepare('SELECT id, username, role, password FROM users WHERE username = ? AND is_active = 1 LIMIT 1');
-            $stmt->execute([$username]);
+            $stmt = $pdo->prepare('SELECT id, username, email, role, password FROM users WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1');
+            $stmt->execute([$username, $username]);
             $user = $stmt->fetch();
             if ($user && password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
@@ -26,7 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $error = 'Invalid credentials.';
         } catch (Throwable $e) {
-            $error = 'Login error.';
+            if (defined('APP_DEBUG') && APP_DEBUG) {
+                $error = 'Login error: ' . $e->getMessage();
+            } else {
+                $error = 'System configuration error. Please run the installer again.';
+            }
         }
     }
 }
