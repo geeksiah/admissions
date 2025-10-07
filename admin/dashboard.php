@@ -4,18 +4,31 @@ require_once __DIR__ . '/../config/database.php';
 requireLogin();
 requireRole(['admin','super_admin','admissions_officer','reviewer']);
 
-$pageTitle = 'Admin Dashboard';
-include __DIR__ . '/../includes/header.php';
-// Brand variables (will be set from Settings later); provide sensible defaults
+// Brand variables (read from settings if available)
 $brandColor = '#2563eb';
 $logoPath = '/uploads/logos/logo.png';
+try {
+  $db = new Database();
+  $pdo = $db->getConnection();
+  $pdo->exec("CREATE TABLE IF NOT EXISTS system_config (config_key VARCHAR(100) PRIMARY KEY, config_value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)");
+  $stmt = $pdo->prepare("SELECT config_key, config_value FROM system_config WHERE config_key IN ('brand_color','logo_path')");
+  $stmt->execute();
+  foreach ($stmt->fetchAll() as $row) {
+    if ($row['config_key'] === 'brand_color' && !empty($row['config_value'])) { $brandColor = $row['config_value']; }
+    if ($row['config_key'] === 'logo_path' && !empty($row['config_value'])) { $logoPath = $row['config_value']; }
+  }
+} catch (Throwable $e) { /* ignore, use defaults */ }
 $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
+
+$pageTitle = 'Admin Dashboard';
+include __DIR__ . '/../includes/header.php';
 ?>
 
 <style>
   :root{--brand: <?php echo $brandColor; ?>;}
-  .layout{display:grid;grid-template-columns:260px 1fr 320px;gap:16px}
-  .sidebar{background:var(--brand);border:none;border-radius:0;padding:16px;height:calc(100vh - 80px);position:sticky;top:64px;color:#fff}
+  .layout{display:grid;grid-template-columns:260px 1fr 320px;gap:16px;padding-left:260px}
+  .nav{padding-left:260px;padding-right:0}
+  .sidebar{background:var(--brand);border:none;border-radius:0;padding:16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
   .sidebar .logo{display:flex;align-items:center;gap:10px;margin:6px 6px 14px 6px}
   .sidebar .logo img{height:34px;width:auto;display:block}
   .sidebar .logo .placeholder{width:34px;height:34px;border-radius:8px;background:#fff;opacity:.95}
@@ -41,10 +54,11 @@ $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
   .kpi .box{background:var(--surface-hover);border-radius:10px;padding:10px;text-align:center}
   .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .hamburger{display:none}
-  @media (max-width: 1280px){ .layout{grid-template-columns:240px 1fr} .right-rail{display:none} }
+  @media (max-width: 1280px){ .layout{grid-template-columns:1fr;padding-left:260px} .right-rail{display:none} }
   @media (max-width: 768px){
-    .layout{grid-template-columns:1fr}
-    .sidebar{position:fixed;left:12px;top:70px;z-index:1000;width:240px;transform:translateX(-260px);transition:transform .2s ease}
+    .layout{grid-template-columns:1fr;padding-left:0}
+    .nav{padding-left:16px}
+    .sidebar{left:0;top:0;z-index:1000;width:240px;transform:translateX(-260px);transition:transform .2s ease}
     .sidebar.show{transform:translateX(0)}
     .hamburger{display:inline-flex}
   }

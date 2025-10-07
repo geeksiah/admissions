@@ -28,11 +28,30 @@ require_once __DIR__ . '/../config/config.php';
     <div>
       <a href="/" class="active"><i class="bi bi-mortarboard"></i> <?php echo APP_NAME; ?></a>
     </div>
-    <div>
+    <div style="display:flex;align-items:center;gap:10px">
       <button id="themeToggle" class="btn secondary" style="margin-right:8px"><i class="bi bi-circle-half"></i> Theme</button>
       <?php if (isLoggedIn()): ?>
-        <a href="/admin/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        <div class="user-menu" style="position:relative">
+          <?php
+            $avatarPath = '/uploads/avatars/' . ($_SESSION['user_id'] ?? '0') . '.png';
+            $avatarFs = $_SERVER['DOCUMENT_ROOT'] . $avatarPath;
+            $initials = strtoupper(substr($_SESSION['username'] ?? 'U',0,2));
+          ?>
+          <div id="avatarBtn" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;overflow:hidden">
+            <?php if (file_exists($avatarFs)): ?>
+              <img src="<?php echo $avatarPath; ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover">
+            <?php else: ?>
+              <span style="font-size:12px;font-weight:700"><?php echo $initials; ?></span>
+            <?php endif; ?>
+          </div>
+          <div id="userDropdown" style="position:absolute;right:0;top:44px;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:180px;display:none;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:1000">
+            <a href="/profile" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-person"></i> Profile</a>
+            <a href="/admin/dashboard?panel=notifications" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-bell"></i> Notifications</a>
+            <a href="/admin/dashboard?panel=settings" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-gear"></i> Settings</a>
+            <div style="height:1px;background:var(--border);"></div>
+            <a href="/logout" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-box-arrow-right"></i> Logout</a>
+          </div>
+        </div>
       <?php else: ?>
         <a href="/login"><i class="bi bi-box-arrow-in-right"></i> Login</a>
       <?php endif; ?>
@@ -55,6 +74,16 @@ require_once __DIR__ . '/../config/config.php';
       // set visual state on load
       var isLight = document.documentElement.classList.contains('light');
       btn.classList.toggle('active', isLight);
+
+      var avatarBtn = document.getElementById('avatarBtn');
+      var dropdown = document.getElementById('userDropdown');
+      if (avatarBtn && dropdown) {
+        avatarBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(){ dropdown.style.display = 'none'; });
+      }
     });
   </script>
 
