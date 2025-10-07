@@ -18,9 +18,11 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo = new \PDO($dsn, $user, $pass, [\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
 
         if ($reset) {
-            // Drop all tables in target DB
-            $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+            // Drop all tables in target DB (disable FK checks to avoid constraint issues)
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+            $tables = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")->fetchAll(\PDO::FETCH_COLUMN);
             foreach ($tables as $t) { $pdo->exec("DROP TABLE IF EXISTS `{$t}`"); }
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
         }
 
         // Write config.php constants by appending (idempotent for this installer)

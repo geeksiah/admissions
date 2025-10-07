@@ -17,6 +17,7 @@ require_once __DIR__ . '/../config/config.php';
       <a href="/" class="active"><i class="bi bi-mortarboard"></i> <?php echo APP_NAME; ?></a>
     </div>
     <div>
+      <button id="themeToggle" class="btn secondary" style="margin-right:8px"><i class="bi bi-circle-half"></i> Theme</button>
       <?php if (isLoggedIn()): ?>
         <a href="/admin/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
         <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -26,4 +27,20 @@ require_once __DIR__ . '/../config/config.php';
     </div>
   </div>
   <div class="container">
+  <script>
+    (function(){
+      try{
+        var theme = localStorage.getItem('ams_theme') || 'dark';
+        if(theme==='light') document.documentElement.classList.add('light');
+      }catch(e){}
+    })();
+    window.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('themeToggle');
+      if(!btn) return;
+      btn.addEventListener('click', function(){
+        var isLight = document.documentElement.classList.toggle('light');
+        try{ localStorage.setItem('ams_theme', isLight ? 'light' : 'dark'); }catch(e){}
+      });
+    });
+  </script>
 
