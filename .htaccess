@@ -74,10 +74,12 @@ RewriteRule ^login/?$ login.php [L,QSA]
 RewriteRule ^logout/?$ logout.php [L,QSA]
 RewriteRule ^profile/?$ profile.php [L,QSA]
 
-# Admin routes
+# Admin routes - use working dashboard
+RewriteRule ^admin/dashboard/?$ admin/dashboard-working.php [L,QSA]
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 
-# Student routes
+# Student routes - use working dashboard
+RewriteRule ^student/dashboard/?$ student/dashboard-working.php [L,QSA]
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
 
 # Special routes
