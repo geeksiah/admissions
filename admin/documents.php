@@ -155,7 +155,7 @@ include '../includes/header.php';
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-0"><?php echo $this->formatBytes($statistics['total_size'] ?? 0); ?></h4>
+                        <h4 class="mb-0"><?php echo formatBytes($statistics['total_size'] ?? 0); ?></h4>
                         <p class="mb-0">Total Size</p>
                     </div>
                     <div class="align-self-center">
@@ -292,7 +292,7 @@ include '../includes/header.php';
                                     <span class="badge bg-info"><?php echo $documentTypes[$document['document_type']] ?? ucfirst($document['document_type']); ?></span>
                                 </td>
                                 <td>
-                                    <?php echo $this->formatBytes($document['file_size']); ?>
+                                    <?php echo formatBytes($document['file_size']); ?>
                                 </td>
                                 <td>
                                     <?php

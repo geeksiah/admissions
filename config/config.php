@@ -81,7 +81,9 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        redirect('login.php');
+        $target = '/login';
+        header('Location: ' . $target);
+        exit();
     }
 }
 
@@ -98,7 +100,9 @@ function hasRole($requiredRoles) {
 
 function requireRole($requiredRoles) {
     if (!hasRole($requiredRoles)) {
-        redirect('unauthorized.php');
+        $target = '/unauthorized';
+        header('Location: ' . $target);
+        exit();
     }
 }
 
