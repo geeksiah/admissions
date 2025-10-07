@@ -12,7 +12,7 @@ echo "<h2>✅ Testing Fixed Issues:</h2>";
 
 echo "<h3>1. Path Fix Test</h3>";
 try {
-    $configPath = dirname(__DIR__) . '/config/config.php';
+    $configPath = __DIR__ . '/config/config.php';
     echo "Config path: $configPath<br>";
     
     if (file_exists($configPath)) {
@@ -29,7 +29,7 @@ try {
 
 echo "<h3>2. Database Fix Test</h3>";
 try {
-    require_once dirname(__DIR__) . '/config/database.php';
+    require_once __DIR__ . '/config/database.php';
     $database = new Database();
     echo "✅ Database class loaded<br>";
     

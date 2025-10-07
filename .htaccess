@@ -74,8 +74,8 @@ RewriteRule ^login/?$ login.php [L,QSA]
 RewriteRule ^logout/?$ logout.php [L,QSA]
 RewriteRule ^profile/?$ profile.php [L,QSA]
 
-# Admin routes - use working dashboard
-RewriteRule ^admin/dashboard/?$ admin/dashboard-working.php [L,QSA]
+# Admin routes - use simple dashboard
+RewriteRule ^admin/dashboard/?$ admin/dashboard-simple.php [L,QSA]
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 
 # Student routes - use working dashboard
