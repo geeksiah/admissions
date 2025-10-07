@@ -1,6 +1,11 @@
 <?php
 // Core configuration and helpers (PHP 8.2+ compatible)
 
+// If installer created secrets, load them first so DB_* are defined
+if (file_exists(__DIR__ . '/db_secrets.php')) {
+    require_once __DIR__ . '/db_secrets.php';
+}
+
 // App
 define('APP_NAME', 'Admissions Management System');
 define('APP_VERSION', '1.0.0');

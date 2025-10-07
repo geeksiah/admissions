@@ -25,15 +25,13 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
         }
 
-        // Write config.php constants by appending (idempotent for this installer)
-        $cfgFile = __DIR__ . '/../config/config.php';
-        $cfg = file_get_contents($cfgFile);
-        // inject/replace constants
-        $cfg = preg_replace('/define\(\'DB_HOST\'.*?\);/','define(\'DB_HOST\', \''.$host.'\');',$cfg);
-        $cfg = preg_replace('/define\(\'DB_NAME\'.*?\);/','define(\'DB_NAME\', \''.$name.'\');',$cfg);
-        $cfg = preg_replace('/define\(\'DB_USER\'.*?\);/','define(\'DB_USER\', \''.$user.'\');',$cfg);
-        $cfg = preg_replace('/define\(\'DB_PASS\'.*?\);/','define(\'DB_PASS\', \''.$pass.'\');',$cfg);
-        file_put_contents($cfgFile, $cfg);
+        // Write dedicated secrets file to avoid fragile regex updates
+        $secrets = "<?php\n".
+                  "define('DB_HOST','".$host."');\n".
+                  "define('DB_NAME','".$name."');\n".
+                  "define('DB_USER','".$user."');\n".
+                  "define('DB_PASS','".$pass."');\n";
+        file_put_contents(__DIR__ . '/../config/db_secrets.php', $secrets);
 
         // Create schema
         $schema = file_get_contents(__DIR__ . '/../database/schema.sql');
