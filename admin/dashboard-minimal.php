@@ -1,53 +1,132 @@
 <?php
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Start session
+// Ultra-minimal admin dashboard - no dependencies
 session_start();
 
-echo "<h1>Minimal Admin Dashboard</h1>";
-
-// Check if user is logged in
+// Simple authentication check
 if (!isset($_SESSION['user_id'])) {
-    echo "<p style='color: red;'>User not logged in</p>";
+    echo "<h1>Not Logged In</h1>";
     echo "<p><a href='/login'>Go to Login</a></p>";
     exit;
 }
 
-// Check if user has admin role
-$allowedRoles = ['admin', 'super_admin', 'admissions_officer', 'reviewer'];
-if (!in_array($_SESSION['role'] ?? '', $allowedRoles)) {
-    echo "<p style='color: red;'>Access denied. Your role: " . ($_SESSION['role'] ?? 'None') . "</p>";
+// Simple role check
+$role = $_SESSION['role'] ?? '';
+if (!in_array($role, ['admin', 'super_admin', 'admissions_officer', 'reviewer'])) {
+    echo "<h1>Access Denied</h1>";
+    echo "<p>Your role: $role</p>";
     echo "<p><a href='/logout'>Logout</a></p>";
     exit;
 }
 
-echo "<p style='color: green;'>✓ User authenticated successfully</p>";
-echo "<p><strong>User:</strong> " . ($_SESSION['first_name'] ?? '') . " " . ($_SESSION['last_name'] ?? '') . "</p>";
-echo "<p><strong>Role:</strong> " . ($_SESSION['role'] ?? 'None') . "</p>";
-echo "<p><strong>Session ID:</strong> " . session_id() . "</p>";
-
-echo "<h2>Navigation Test</h2>";
-echo "<p><a href='/admin/applications'>Applications</a></p>";
-echo "<p><a href='/admin/students'>Students</a></p>";
-echo "<p><a href='/admin/programs'>Programs</a></p>";
-echo "<p><a href='/admin/settings'>Settings</a></p>";
-echo "<p><a href='/profile'>Profile</a></p>";
-echo "<p><a href='/logout'>Logout</a></p>";
-
-echo "<h2>Direct File Links</h2>";
-echo "<p><a href='admin/applications.php'>Applications (Direct)</a></p>";
-echo "<p><a href='admin/students.php'>Students (Direct)</a></p>";
-echo "<p><a href='admin/programs.php'>Programs (Direct)</a></p>";
-
-echo "<h2>Debug Links</h2>";
-echo "<p><a href='/admin/test-500'>500 Error Debug</a></p>";
-echo "<p><a href='/debug'>General Debug</a></p>";
-
-echo "<h2>System Status</h2>";
-echo "<p>✓ PHP Working</p>";
-echo "<p>✓ Session Working</p>";
-echo "<p>✓ Authentication Working</p>";
-echo "<p>✓ Navigation Links Ready</p>";
+// Get user info
+$username = $_SESSION['username'] ?? 'Admin';
+$firstName = $_SESSION['first_name'] ?? 'Admin';
+$lastName = $_SESSION['last_name'] ?? 'User';
 ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 bg-primary text-white p-3" style="min-height: 100vh;">
+                <h4>Admin Panel</h4>
+                <hr>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/admin/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/admin/applications">Applications</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/admin/students">Students</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/admin/programs">Programs</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/admin/users">Users</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 p-4">
+                <h1>Admin Dashboard</h1>
+                <p>Welcome, <?php echo htmlspecialchars($firstName . ' ' . $lastName); ?>!</p>
+                <p>Role: <?php echo htmlspecialchars($role); ?></p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3>0</h3>
+                                <p>Applications</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3>0</h3>
+                                <p>Students</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3>0</h3>
+                                <p>Programs</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3>0</h3>
+                                <p>Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h3>Quick Actions</h3>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <a href="/admin/applications" class="btn btn-primary w-100">View Applications</a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="/admin/students" class="btn btn-success w-100">Manage Students</a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="/admin/programs" class="btn btn-info w-100">Programs</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="alert alert-success">
+                        <h4>✅ System Status</h4>
+                        <ul>
+                            <li>Authentication: Working</li>
+                            <li>Session: Active</li>
+                            <li>Dashboard: Loaded</li>
+                            <li>Navigation: Ready</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
