@@ -12,8 +12,10 @@ require_once __DIR__ . '/../config/config.php';
     (function(){
       try{
         var theme = localStorage.getItem('ams_theme') || 'dark';
-        if(theme==='light') document.documentElement.classList.add('light');
-        document.documentElement.setAttribute('data-theme', theme);
+        var root = document.documentElement, body=document.body;
+        if(theme==='light'){ root.classList.add('light'); body.classList.add('light'); }
+        else { root.classList.remove('light'); body.classList.remove('light'); }
+        root.setAttribute('data-theme', theme);
       }catch(e){}
     })();
   </script>
@@ -42,9 +44,11 @@ require_once __DIR__ . '/../config/config.php';
       var btn = document.getElementById('themeToggle');
       if(!btn) return;
       btn.addEventListener('click', function(){
-        var isLight = document.documentElement.classList.toggle('light');
+        var root = document.documentElement, body=document.body;
+        var isLight = !root.classList.contains('light');
+        if(isLight){ root.classList.add('light'); body.classList.add('light'); } else { root.classList.remove('light'); body.classList.remove('light'); }
         var theme = isLight ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
+        root.setAttribute('data-theme', theme);
         try{ localStorage.setItem('ams_theme', theme); }catch(e){}
         btn.classList.toggle('active', isLight);
       });
