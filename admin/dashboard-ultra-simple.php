@@ -4,8 +4,7 @@ session_start();
 
 // Basic authentication check
 if (!isset($_SESSION['user_id'])) {
-    echo "<h1>Not Authenticated</h1>";
-    echo "<p>Please <a href='/login'>login</a> first.</p>";
+    header('Location: /error-pages/no-session.php');
     exit;
 }
 
