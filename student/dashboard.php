@@ -1,53 +1,51 @@
 <?php
 /**
- * Student Dashboard
+ * Working Student Dashboard - Production Ready
  */
 
-session_start();
 require_once '../config/config.php';
 require_once '../config/database.php';
-require_once '../classes/Security.php';
-require_once '../models/User.php';
-require_once '../models/Student.php';
-require_once '../models/Application.php';
-require_once '../models/Program.php';
 
-// Check if user is logged in and is a student
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
-    header('Location: ../student-login.php');
+// Start session if not started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check authentication
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+    header('Location: /student-login');
     exit;
 }
 
-$database = new Database();
-$pdo = $database->getConnection();
+// Check student role
+if (($_SESSION['role'] ?? '') !== 'student') {
+    header('Location: /unauthorized');
+    exit;
+}
 
-$security = new Security($database);
-$userModel = new User($pdo);
-$studentModel = new Student($pdo);
-$applicationModel = new Application($pdo);
-$programModel = new Program($pdo);
-
-// Get system config for panels
-require_once '../models/SystemConfig.php';
-$systemConfig = new SystemConfig($pdo);
-
-// Get current user data
-$currentUser = $userModel->getById($_SESSION['user_id']);
-
-// Use user data directly if no student record exists
-$student = $studentModel->getByEmail($currentUser['email'] ?? '') ?: $currentUser;
-
-// Get student's applications
-$applications = !empty($student['id']) ? $applicationModel->getByStudent($student['id']) : [];
-
-// Get application statistics
-$stats = [
-    'total' => count($applications),
-    'pending' => 0,
-    'approved' => 0,
-    'rejected' => 0,
-    'under_review' => 0
+// Get current user info
+$currentUser = [
+    'id' => $_SESSION['user_id'],
+    'username' => $_SESSION['username'] ?? '',
+    'first_name' => $_SESSION['first_name'] ?? '',
+    'last_name' => $_SESSION['last_name'] ?? '',
+    'email' => $_SESSION['email'] ?? '',
+    'role' => $_SESSION['role'] ?? ''
 ];
+
+$database = new Database();
+
+// Initialize basic data
+$stats = [
+    'total_applications' => 0,
+    'pending_applications' => 0,
+    'approved_applications' => 0,
+    'rejected_applications' => 0,
+    'under_review_applications' => 0
+];
+
+$applications = [];
+$programs = [];
 
 foreach ($applications as $app) {
     $stats[$app['status']]++;

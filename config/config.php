@@ -88,6 +88,47 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
+function generateCSRFToken() {
+    if (!isset($_SESSION[CSRF_TOKEN_NAME])) {
+        $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION[CSRF_TOKEN_NAME];
+}
+
+function validateCSRFToken($token) {
+    return isset($_SESSION[CSRF_TOKEN_NAME]) && hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
+}
+
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header('Location: /login');
+        exit;
+    }
+}
+
+function requireRole($requiredRoles) {
+    requireLogin();
+    $userRole = $_SESSION['role'] ?? '';
+    $roles = is_array($requiredRoles) ? $requiredRoles : [$requiredRoles];
+    
+    if (!in_array($userRole, $roles)) {
+        header('Location: /unauthorized');
+        exit;
+    }
+}
+
+function formatDate($date, $format = DATE_FORMAT) {
+    return date($format, strtotime($date));
+}
+
+function formatCurrency($amount) {
+    return '$' . number_format($amount, 2);
+}
+
+function sanitizeInput($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
