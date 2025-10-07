@@ -42,27 +42,27 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <div id="panel-applications" class="hidden">
-      <?php if (file_exists(__DIR__.'/panels/applications.php')) include __DIR__.'/panels/applications.php'; else: ?>
+      <?php if (file_exists(__DIR__.'/panels/applications.php')) { include __DIR__.'/panels/applications.php'; } else { ?>
         <div class="card"><h3>Applications</h3><p class="muted">Module scaffold. Implement list, filters, and workflows.</p></div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
 
     <div id="panel-students" class="hidden">
-      <?php if (file_exists(__DIR__.'/panels/students.php')) include __DIR__.'/panels/students.php'; else: ?>
+      <?php if (file_exists(__DIR__.'/panels/students.php')) { include __DIR__.'/panels/students.php'; } else { ?>
         <div class="card"><h3>Students</h3><p class="muted">Module scaffold. Implement directory and profiles.</p></div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
 
     <div id="panel-programs" class="hidden">
-      <?php if (file_exists(__DIR__.'/panels/programs.php')) include __DIR__.'/panels/programs.php'; else: ?>
+      <?php if (file_exists(__DIR__.'/panels/programs.php')) { include __DIR__.'/panels/programs.php'; } else { ?>
         <div class="card"><h3>Programs</h3><p class="muted">Module scaffold. Implement CRUD for programs.</p></div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
 
     <div id="panel-settings" class="hidden">
-      <?php if (file_exists(__DIR__.'/panels/settings.php')) include __DIR__.'/panels/settings.php'; else: ?>
+      <?php if (file_exists(__DIR__.'/panels/settings.php')) { include __DIR__.'/panels/settings.php'; } else { ?>
         <div class="card"><h3>Settings</h3><p class="muted">Module scaffold. System settings and branding.</p></div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
   </div>
 </div>
