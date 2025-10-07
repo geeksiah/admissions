@@ -33,6 +33,16 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
                   "define('DB_PASS','".$pass."');\n";
         file_put_contents(__DIR__ . '/../config/db_secrets.php', $secrets);
 
+        // Verify secrets persisted
+        if (!file_exists(__DIR__ . '/../config/db_secrets.php')) {
+            throw new \RuntimeException('Failed to write config/db_secrets.php. Please ensure the config directory is writable.');
+        }
+        // Load and verify values
+        require __DIR__ . '/../config/db_secrets.php';
+        if (empty(DB_USER) && empty(DB_PASS)) {
+            throw new \RuntimeException('Database credentials appear empty. Please re-enter and try again.');
+        }
+
         // Create schema
         $schema = file_get_contents(__DIR__ . '/../database/schema.sql');
         $pdo->exec($schema);
