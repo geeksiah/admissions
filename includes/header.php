@@ -13,6 +13,7 @@ require_once __DIR__ . '/../config/config.php';
       try{
         var theme = localStorage.getItem('ams_theme') || 'dark';
         if(theme==='light') document.documentElement.classList.add('light');
+        document.documentElement.setAttribute('data-theme', theme);
       }catch(e){}
     })();
   </script>
@@ -42,11 +43,14 @@ require_once __DIR__ . '/../config/config.php';
       if(!btn) return;
       btn.addEventListener('click', function(){
         var isLight = document.documentElement.classList.toggle('light');
-        try{ localStorage.setItem('ams_theme', isLight ? 'light' : 'dark'); }catch(e){}
+        var theme = isLight ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        try{ localStorage.setItem('ams_theme', theme); }catch(e){}
         btn.classList.toggle('active', isLight);
       });
       // set visual state on load
-      btn.classList.toggle('active', document.documentElement.classList.contains('light'));
+      var isLight = document.documentElement.classList.contains('light');
+      btn.classList.toggle('active', isLight);
     });
   </script>
 
