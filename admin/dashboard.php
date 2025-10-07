@@ -1,57 +1,37 @@
 <?php
 /**
  * Fixed Admin Dashboard - Production Ready
- * Optimized for cPanel/Shared Hosting (PHP 8.2+)
+ * Uses proper config system
  */
 
-// Error reporting for debugging (disable in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/dashboard_errors.log');
+// Include configuration files
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
 
-// Start session
+// Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // Authentication check
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    header('Location: /login');
     exit('Authentication required');
 }
 
-// Role check
+// Role check - allow more admin roles
 $userRole = $_SESSION['role'] ?? $_SESSION['user_role'] ?? '';
-if (!in_array($userRole, ['admin', 'super_admin'], true)) {
-    http_response_code(403);
+$allowedRoles = ['admin', 'super_admin', 'admissions_officer', 'reviewer'];
+if (!in_array($userRole, $allowedRoles)) {
+    header('Location: /unauthorized');
     exit('Access denied. Admin privileges required.');
 }
 
-// Get absolute paths
-$rootPath = dirname(__DIR__);
-$adminPath = __DIR__;
-
-// Database configuration
-$dbConfig = [
-    'host' => 'localhost',
-    'name' => 'u279576488_admissions',
-    'user' => 'u279576488_lapaz',
-    'pass' => '7uVV;OEX|',
-    'charset' => 'utf8mb4'
-];
-
-// Initialize database connection with error handling
+// Initialize database connection using proper config
 try {
-    $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset={$dbConfig['charset']}";
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ];
-    
-    $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
-} catch (PDOException $e) {
+    $database = new Database();
+    $pdo = $database->getConnection();
+} catch (Exception $e) {
     error_log("Database connection failed: " . $e->getMessage());
     http_response_code(500);
     exit('Database connection failed. Please contact administrator.');
@@ -359,7 +339,7 @@ function formatCurrency($amount) {
                     <i class="bi bi-person-circle me-2"></i>
                     Welcome, <strong><?php echo htmlspecialchars($currentUser['first_name']); ?></strong>
                 </span>
-                <a class="btn btn-outline-danger btn-sm" href="../logout.php">
+                <a class="btn btn-outline-danger btn-sm" href="/logout">
                     <i class="bi bi-box-arrow-right me-1"></i>
                     Logout
                 </a>
