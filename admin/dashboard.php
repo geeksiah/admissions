@@ -1,7 +1,7 @@
 <?php
 /**
- * Fixed Admin Dashboard - Production Ready
- * Uses proper config system
+ * Admin Dashboard - Commit 1,29 Stable Version
+ * Working navigation with test buttons
  */
 
 // Include configuration files
@@ -37,46 +37,15 @@ try {
     exit('Database connection failed. Please contact administrator.');
 }
 
-// Helper function to safely fetch data
-function safeQuery($pdo, $query, $params = []) {
-    try {
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        error_log("Query error: " . $e->getMessage() . " | Query: " . $query);
-        return [];
-    }
-}
-
-function safeQuerySingle($pdo, $query, $params = []) {
-    try {
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetch();
-    } catch (PDOException $e) {
-        error_log("Query error: " . $e->getMessage());
-        return null;
-    }
-}
-
-function safeCount($pdo, $query, $params = []) {
-    try {
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        return (int) $stmt->fetchColumn();
-    } catch (PDOException $e) {
-        error_log("Count query error: " . $e->getMessage());
-        return 0;
-    }
-}
-
 // Get current user data
-$currentUser = safeQuerySingle(
-    $pdo,
-    "SELECT * FROM users WHERE id = ? LIMIT 1",
-    [$_SESSION['user_id']]
-);
+try {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([$_SESSION['user_id']]);
+    $currentUser = $stmt->fetch();
+} catch (Exception $e) {
+    error_log("User query failed: " . $e->getMessage());
+    $currentUser = null;
+}
 
 if (!$currentUser) {
     $currentUser = [
@@ -84,82 +53,6 @@ if (!$currentUser) {
         'last_name' => $_SESSION['last_name'] ?? 'User',
         'email' => $_SESSION['email'] ?? 'admin@system.local'
     ];
-}
-
-// Get dashboard statistics with fallback
-$stats = [
-    'total_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications"),
-    'pending_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'pending'"),
-    'approved_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'approved'"),
-    'rejected_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'rejected'"),
-    'under_review_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE status = 'under_review'"),
-    'today_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE DATE(created_at) = CURDATE()"),
-    'week_applications' => safeCount($pdo, "SELECT COUNT(*) FROM applications WHERE YEARWEEK(created_at) = YEARWEEK(NOW())")
-];
-
-// Get recent applications (with safe JOIN)
-$recentApplications = safeQuery(
-    $pdo,
-    "SELECT 
-        a.id,
-        a.application_id,
-        a.first_name,
-        a.last_name,
-        a.status,
-        a.created_at,
-        COALESCE(p.name, 'Unknown Program') as program_name
-    FROM applications a
-    LEFT JOIN programs p ON a.program_id = p.id
-    ORDER BY a.created_at DESC
-    LIMIT 10"
-);
-
-// Get recent students
-$recentStudents = safeQuery(
-    $pdo,
-    "SELECT 
-        id,
-        first_name,
-        last_name,
-        email,
-        status,
-        created_at
-    FROM students
-    ORDER BY created_at DESC
-    LIMIT 10"
-);
-
-// Get active programs count
-$activeProgramsCount = safeCount($pdo, "SELECT COUNT(*) FROM programs WHERE status = 'active'");
-
-// Get pending documents count
-$pendingDocumentsCount = safeCount($pdo, "SELECT COUNT(*) FROM documents WHERE status = 'pending'");
-
-// Get total revenue (if payments table exists)
-$totalRevenue = 0;
-try {
-    $stmt = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'completed'");
-    $totalRevenue = (float) $stmt->fetchColumn();
-} catch (PDOException $e) {
-    error_log("Revenue query failed: " . $e->getMessage());
-}
-
-// Status color helper
-function getStatusColor($status) {
-    $colors = [
-        'approved' => 'success',
-        'rejected' => 'danger',
-        'under_review' => 'info',
-        'pending' => 'warning',
-        'active' => 'success',
-        'inactive' => 'secondary'
-    ];
-    return $colors[$status] ?? 'secondary';
-}
-
-// Format currency
-function formatCurrency($amount) {
-    return 'GHS ' . number_format($amount, 2);
 }
 ?>
 <!DOCTYPE html>
@@ -170,9 +63,9 @@ function formatCurrency($amount) {
     <title>Admin Dashboard - Admissions Management System</title>
     
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <style>
         :root {
@@ -200,6 +93,49 @@ function formatCurrency($amount) {
             font-weight: 700;
             color: var(--primary-color) !important;
             font-size: 1.25rem;
+        }
+        
+        .sidebar {
+            background: white;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            min-height: calc(100vh - 76px);
+        }
+        
+        .nav-link {
+            color: #6b7280;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin: 0.25rem 0;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            background-color: #f3f4f6;
+            color: var(--primary-color);
+        }
+        
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+        
+        .panel-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .panel-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .stat-card {
@@ -232,11 +168,6 @@ function formatCurrency($amount) {
         
         .stat-card.info {
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-        }
-        
-        .stat-card.danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
         }
         
@@ -273,56 +204,6 @@ function formatCurrency($amount) {
             font-weight: 600;
             font-size: 1.125rem;
         }
-        
-        .table {
-            font-size: 0.925rem;
-        }
-        
-        .table thead th {
-            background-color: #f9fafb;
-            border-bottom: 2px solid #e5e7eb;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-        }
-        
-        .badge {
-            padding: 0.375rem 0.75rem;
-            font-weight: 500;
-            font-size: 0.75rem;
-        }
-        
-        .btn-action {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #9ca3af;
-        }
-        
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-        
-        .quick-action-btn {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            text-align: left;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .quick-action-btn:hover {
-            transform: translateX(4px);
-        }
     </style>
 </head>
 <body>
@@ -347,273 +228,291 @@ function formatCurrency($amount) {
         </div>
     </nav>
     
-    <!-- Main Content -->
-    <div class="container-fluid px-4 py-4">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="h3 mb-1">
-                    <i class="bi bi-speedometer2 me-2"></i>
-                    Dashboard Overview
-                </h1>
-                <p class="text-muted mb-0">Real-time insights and quick actions</p>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card primary">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stat-label">Total Applications</div>
-                            <div class="stat-number"><?php echo number_format($stats['total_applications']); ?></div>
-                            <small>+<?php echo $stats['today_applications']; ?> today</small>
-                        </div>
-                        <i class="bi bi-file-earmark-text stat-icon"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="stat-card warning">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stat-label">Pending Review</div>
-                            <div class="stat-number"><?php echo number_format($stats['pending_applications']); ?></div>
-                            <small><?php echo $pendingDocumentsCount; ?> pending documents</small>
-                        </div>
-                        <i class="bi bi-clock-history stat-icon"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="stat-card success">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stat-label">Approved</div>
-                            <div class="stat-number"><?php echo number_format($stats['approved_applications']); ?></div>
-                            <small><?php echo $stats['under_review_applications']; ?> under review</small>
-                        </div>
-                        <i class="bi bi-check-circle stat-icon"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="stat-card info">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stat-label">Active Programs</div>
-                            <div class="stat-number"><?php echo number_format($activeProgramsCount); ?></div>
-                            <small><?php echo formatCurrency($totalRevenue); ?> revenue</small>
-                        </div>
-                        <i class="bi bi-mortarboard stat-icon"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <div class="container-fluid">
         <div class="row">
-            <!-- Recent Applications -->
-            <div class="col-lg-8 mb-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Recent Applications
-                        </span>
-                        <a href="applications.php" class="btn btn-sm btn-primary">View All</a>
-                    </div>
-                    <div class="card-body p-0">
-                        <?php if (empty($recentApplications)): ?>
-                            <div class="empty-state">
-                                <i class="bi bi-inbox"></i>
-                                <h5 class="mt-3">No Applications Yet</h5>
-                                <p class="text-muted">Applications will appear here as they are submitted.</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Application ID</th>
-                                            <th>Student Name</th>
-                                            <th>Program</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($recentApplications as $app): ?>
-                                            <tr>
-                                                <td>
-                                                    <strong class="text-primary">
-                                                        <?php echo htmlspecialchars($app['application_id'] ?? 'N/A'); ?>
-                                                    </strong>
-                                                </td>
-                                                <td>
-                                                    <?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo htmlspecialchars($app['program_name']); ?>
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-<?php echo getStatusColor($app['status']); ?>">
-                                                        <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <small><?php echo date('M j, Y', strtotime($app['created_at'])); ?></small>
-                                                </td>
-                                                <td>
-                                                    <a href="view-application.php?id=<?php echo $app['id']; ?>" 
-                                                       class="btn btn-sm btn-outline-primary btn-action">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 p-0">
+                <div class="sidebar p-3">
+                    <h6 class="text-muted mb-3">ADMIN PANEL</h6>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-panel="overview">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="applications">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Applications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="students">
+                                <i class="bi bi-people"></i>
+                                Students
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="programs">
+                                <i class="bi bi-mortarboard"></i>
+                                Programs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="application_forms">
+                                <i class="bi bi-file-earmark-plus"></i>
+                                Application Forms
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="users">
+                                <i class="bi bi-person-gear"></i>
+                                Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="payments">
+                                <i class="bi bi-credit-card"></i>
+                                Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="reports">
+                                <i class="bi bi-graph-up"></i>
+                                Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="notifications">
+                                <i class="bi bi-bell"></i>
+                                Notifications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="communications">
+                                <i class="bi bi-chat-dots"></i>
+                                Communications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="settings">
+                                <i class="bi bi-gear"></i>
+                                Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="system">
+                                <i class="bi bi-cpu"></i>
+                                System
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
             
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <!-- Quick Actions -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <i class="bi bi-lightning-charge me-2"></i>
-                        Quick Actions
-                    </div>
-                    <div class="card-body">
-                        <a href="applications.php" class="btn btn-outline-primary quick-action-btn">
-                            <i class="bi bi-list-check me-2"></i>
-                            Review Applications
-                            <?php if ($stats['pending_applications'] > 0): ?>
-                                <span class="badge bg-warning float-end">
-                                    <?php echo $stats['pending_applications']; ?>
-                                </span>
-                            <?php endif; ?>
-                        </a>
-                        <a href="students.php" class="btn btn-outline-success quick-action-btn">
-                            <i class="bi bi-people me-2"></i>
-                            Manage Students
-                        </a>
-                        <a href="programs.php" class="btn btn-outline-info quick-action-btn">
-                            <i class="bi bi-mortarboard me-2"></i>
-                            Manage Programs
-                        </a>
-                        <a href="reports.php" class="btn btn-outline-warning quick-action-btn">
-                            <i class="bi bi-graph-up me-2"></i>
-                            View Reports
-                        </a>
-                        <a href="settings.php" class="btn btn-outline-secondary quick-action-btn">
-                            <i class="bi bi-gear me-2"></i>
-                            System Settings
-                        </a>
-                    </div>
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0" id="pageTitle">Dashboard Overview</h1>
                 </div>
-
-                <!-- Recent Students -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>
-                            <i class="bi bi-people me-2"></i>
-                            Recent Students
-                        </span>
-                        <a href="students.php" class="btn btn-sm btn-outline-primary">View All</a>
+                
+                <!-- Overview Panel -->
+                <div class="panel-content active" id="overview-panel">
+                    <div class="alert alert-success">
+                        <h4>Dashboard Overview</h4>
+                        <p>Welcome to the admin dashboard. Navigation should be working now.</p>
+                        <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
+                        <button class="btn btn-primary mt-2" onclick="alert('Basic JavaScript works!'); console.log('Button clicked');">
+                            Test Basic JavaScript
+                        </button>
+                        <button class="btn btn-secondary mt-2" onclick="if(window.showPanel) { alert('showPanel function exists'); window.showPanel('applications'); } else { alert('showPanel function does NOT exist'); }">
+                            Test Navigation Function
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <?php if (empty($recentStudents)): ?>
-                            <div class="empty-state py-3">
-                                <i class="bi bi-person-x"></i>
-                                <p class="text-muted mb-0">No students yet</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                                <?php foreach (array_slice($recentStudents, 0, 5) as $student): ?>
-                                    <div class="list-group-item px-0">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-1">
-                                                    <?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?>
-                                                </h6>
-                                                <small class="text-muted">
-                                                    <?php echo htmlspecialchars($student['email']); ?>
-                                                </small>
-                                            </div>
-                                            <span class="badge bg-<?php echo getStatusColor($student['status'] ?? 'active'); ?>">
-                                                <?php echo ucfirst($student['status'] ?? 'active'); ?>
-                                            </span>
-                                        </div>
+
+                    <!-- Quick Stats -->
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card primary">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Total Applications</div>
+                                        <div class="stat-number">0</div>
                                     </div>
-                                <?php endforeach; ?>
+                                    <i class="bi bi-file-earmark-text stat-icon"></i>
+                                </div>
                             </div>
-                        <?php endif; ?>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card warning">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Pending Review</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-clock-history stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card success">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Approved</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-check-circle stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card info">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Active Programs</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-mortarboard stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- System Status Footer -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body py-2">
-                        <small class="text-muted">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            <strong>System Status:</strong> Operational
-                            <span class="mx-2">|</span>
-                            <strong>PHP:</strong> <?php echo phpversion(); ?>
-                            <span class="mx-2">|</span>
-                            <strong>Database:</strong> Connected
-                            <span class="mx-2">|</span>
-                            <strong>Last Login:</strong> <?php echo date('M j, Y g:i A'); ?>
-                        </small>
-                    </div>
+                
+                <!-- Applications Panel -->
+                <div class="panel-content" id="applications-panel">
+                    <div class="alert alert-info">Applications Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Students Panel -->
+                <div class="panel-content" id="students-panel">
+                    <div class="alert alert-info">Students Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Programs Panel -->
+                <div class="panel-content" id="programs-panel">
+                    <div class="alert alert-info">Programs Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Application Forms Panel -->
+                <div class="panel-content" id="application_forms-panel">
+                    <div class="alert alert-info">Application Forms Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Users Panel -->
+                <div class="panel-content" id="users-panel">
+                    <div class="alert alert-info">Users Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Payments Panel -->
+                <div class="panel-content" id="payments-panel">
+                    <div class="alert alert-info">Payments Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Reports Panel -->
+                <div class="panel-content" id="reports-panel">
+                    <div class="alert alert-info">Reports Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Notifications Panel -->
+                <div class="panel-content" id="notifications-panel">
+                    <div class="alert alert-info">Notifications Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Communications Panel -->
+                <div class="panel-content" id="communications-panel">
+                    <div class="alert alert-info">Communications Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Settings Panel -->
+                <div class="panel-content" id="settings-panel">
+                    <div class="alert alert-info">Settings Panel - Navigation Test</div>
+                </div>
+                
+                <!-- System Panel -->
+                <div class="panel-content" id="system-panel">
+                    <div class="alert alert-info">System Panel - Navigation Test</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Auto-refresh statistics every 5 minutes
-        setInterval(function() {
-            // You can implement AJAX refresh here if needed
-            console.log('Dashboard statistics refreshed');
-        }, 300000);
+        // Dashboard initialization
+        console.log('Admin dashboard script loading...');
         
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-            toast.style.zIndex = '9999';
-            toast.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(toast);
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Admin Dashboard');
+            const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+            const panelContents = document.querySelectorAll('.panel-content');
+            const pageTitle = document.getElementById('pageTitle');
             
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-        
-        // Initial success message
-        window.addEventListener('load', function() {
-            showToast('Dashboard loaded successfully!', 'success');
+            console.log('Found nav links:', navLinks.length);
+            console.log('Found panels:', panelContents.length);
+            
+            // Panel titles mapping
+            const panelTitles = {
+                'overview': 'Dashboard Overview',
+                'applications': 'Applications Management',
+                'students': 'Students Management',
+                'programs': 'Programs Management',
+                'application_forms': 'Application Forms',
+                'users': 'Users Management',
+                'payments': 'Payments Management',
+                'reports': 'Reports & Analytics',
+                'notifications': 'Notifications',
+                'communications': 'Communications',
+                'settings': 'System Settings',
+                'system': 'System Information'
+            };
+            
+            // Global function for external calls
+            window.showPanel = function(panelName) {
+                console.log('showPanel called with:', panelName);
+                
+                // Remove active class from all nav links
+                navLinks.forEach(link => link.classList.remove('active'));
+                
+                // Hide all panels
+                panelContents.forEach(panel => panel.classList.remove('active'));
+                
+                // Show selected panel
+                const targetPanel = document.getElementById(panelName + '-panel');
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                    console.log('Panel activated:', panelName);
+                } else {
+                    console.error('Panel not found:', panelName);
+                }
+                
+                // Update page title
+                if (pageTitle && panelTitles[panelName]) {
+                    pageTitle.textContent = panelTitles[panelName];
+                }
+                
+                // Update nav link
+                const targetLink = document.querySelector(`[data-panel="${panelName}"]`);
+                if (targetLink) {
+                    targetLink.classList.add('active');
+                }
+            };
+            
+            // Add click event listeners
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const panelName = this.getAttribute('data-panel');
+                    console.log('Nav link clicked:', panelName);
+                    window.showPanel(panelName);
+                });
+            });
+            
+            console.log('Navigation system initialized');
         });
     </script>
 </body>

@@ -74,12 +74,12 @@ RewriteRule ^login/?$ login-simple.php [L,QSA]
 RewriteRule ^logout/?$ logout-simple.php [L,QSA]
 RewriteRule ^profile/?$ profile.php [L,QSA]
 
-# Admin routes - use stable dashboard
-RewriteRule ^admin/dashboard/?$ admin/dashboard-stable.php [L,QSA]
+# Admin routes - restored to commit 1,29
+RewriteRule ^admin/dashboard/?$ admin/dashboard.php [L,QSA]
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
 
-# Student routes - use working dashboard
-RewriteRule ^student/dashboard/?$ student/dashboard-working.php [L,QSA]
+# Student routes - restored to commit 1,29
+RewriteRule ^student/dashboard/?$ student/dashboard.php [L,QSA]
 RewriteRule ^student/([^/]+)/?$ student/$1.php [L,QSA]
 
 # Special routes

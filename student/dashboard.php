@@ -1,67 +1,65 @@
 <?php
 /**
- * Working Student Dashboard - Production Ready
+ * Student Dashboard - Commit 1,29 Stable Version
+ * Working navigation with test buttons
  */
 
-require_once '../config/config.php';
-require_once '../config/database.php';
+// Include configuration files
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
 
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check authentication
+// Authentication check
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header('Location: /student-login');
-    exit;
+    header('Location: /login');
+    exit('Authentication required');
 }
 
-// Check student role
-if (($_SESSION['role'] ?? '') !== 'student') {
+// Role check - student access
+$userRole = $_SESSION['role'] ?? $_SESSION['user_role'] ?? '';
+if (!in_array($userRole, ['student', 'applicant'])) {
     header('Location: /unauthorized');
-    exit;
+    exit('Access denied. Student privileges required.');
 }
 
-// Get current user info
-$currentUser = [
-    'id' => $_SESSION['user_id'],
-    'username' => $_SESSION['username'] ?? '',
-    'first_name' => $_SESSION['first_name'] ?? '',
-    'last_name' => $_SESSION['last_name'] ?? '',
-    'email' => $_SESSION['email'] ?? '',
-    'role' => $_SESSION['role'] ?? ''
-];
-
-$database = new Database();
-
-// Initialize basic data
-$stats = [
-    'total_applications' => 0,
-    'pending_applications' => 0,
-    'approved_applications' => 0,
-    'rejected_applications' => 0,
-    'under_review_applications' => 0
-];
-
-$applications = [];
-$programs = [];
-
-foreach ($applications as $app) {
-    $stats[$app['status']]++;
+// Initialize database connection using proper config
+try {
+    $database = new Database();
+    $pdo = $database->getConnection();
+} catch (Exception $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+    http_response_code(500);
+    exit('Database connection failed. Please contact administrator.');
 }
 
-// Get available programs for new applications
-$availablePrograms = $programModel->getAll(['status' => 'active']);
+// Get current user data
+try {
+    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? LIMIT 1");
+    $stmt->execute([$_SESSION['user_id']]);
+    $currentStudent = $stmt->fetch();
+} catch (Exception $e) {
+    error_log("Student query failed: " . $e->getMessage());
+    $currentStudent = null;
+}
+
+if (!$currentStudent) {
+    $currentStudent = [
+        'first_name' => $_SESSION['first_name'] ?? 'Student',
+        'last_name' => $_SESSION['last_name'] ?? 'User',
+        'email' => $_SESSION['email'] ?? 'student@system.local'
+    ];
+}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - <?php echo APP_NAME; ?></title>
-    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <title>Student Dashboard - Admissions Management System</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -70,790 +68,356 @@ $availablePrograms = $programModel->getAll(['status' => 'active']);
     
     <style>
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --sidebar-width: 260px;
-            --header-height: 60px;
-            --text-primary: #1a202c;
-            --text-secondary: #4a5568;
-            --text-muted: #718096;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f7fafc;
-            --bg-tertiary: #edf2f7;
-            --border-color: #e2e8f0;
-            --border-light: #f7fafc;
-            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius-sm: 4px;
-            --radius-md: 6px;
-            --radius-lg: 8px;
-            --radius-xl: 12px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --primary-color: #2563eb;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--light-bg);
+            color: #374151;
         }
         
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--text-muted);
-            border-radius: 4px;
-            transition: background 0.2s ease;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
+        .navbar {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: var(--text-muted) var(--bg-tertiary);
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.25rem;
         }
         
-        /* Sidebar Styles */
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            overflow-y: auto;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .sidebar-header {
-            padding: 1.5rem 1rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .sidebar-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin: 0;
-            opacity: 0.9;
-        }
-        
-        .sidebar-nav {
-            padding: 0.5rem 0;
-        }
-        
-        .nav-item {
-            margin: 0.125rem 0.75rem;
+            background: white;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            min-height: calc(100vh - 76px);
         }
         
         .nav-link {
-            display: flex;
-            align-items: center;
+            color: #6b7280;
             padding: 0.75rem 1rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border-radius: var(--radius-md);
-            position: relative;
-            font-weight: 500;
-            font-size: 0.875rem;
+            border-radius: 8px;
+            margin: 0.25rem 0;
+            transition: all 0.2s;
         }
         
         .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-            transform: translateX(2px);
+            background-color: #f3f4f6;
+            color: var(--primary-color);
         }
         
         .nav-link.active {
-            background-color: rgba(255,255,255,0.15);
+            background-color: var(--primary-color);
             color: white;
         }
         
         .nav-link i {
-            width: 16px;
+            width: 20px;
             margin-right: 0.75rem;
-            text-align: center;
-            font-size: 0.875rem;
-            flex-shrink: 0;
         }
         
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
-            background-color: var(--bg-secondary);
-        }
-        
-        /* Header */
-        .top-header {
-            background: var(--bg-primary);
-            height: var(--header-height);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .page-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-        
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.75rem;
-            border: 2px solid var(--bg-primary);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .user-avatar:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-md);
-        }
-        
-        /* Content Area */
-        .content-wrapper {
-            padding: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        /* Cards */
-        .card {
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 1rem;
-            transition: all 0.2s ease;
-            background: var(--bg-primary);
-            overflow: hidden;
-        }
-        
-        .card:hover {
-            box-shadow: var(--shadow-md);
-        }
-        
-        .card-header {
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-light);
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-            padding: 1rem 1.25rem;
-        }
-        
-        .card-title {
-            margin: 0;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-        
-        .card-body {
-            padding: 1.25rem;
-        }
-        
-        /* Statistics Cards */
-        .stat-card {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-            transition: all 0.2s ease;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            height: 100%;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--primary-color);
-        }
-        
-        .stat-card.bg-success::before {
-            background: #10b981;
-        }
-        
-        .stat-card.bg-warning::before {
-            background: #f59e0b;
-        }
-        
-        .stat-card.bg-info::before {
-            background: #06b6d4;
-        }
-        
-        .stat-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-        
-        .stat-number {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-            color: var(--text-primary);
-        }
-        
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .stat-icon {
-            font-size: 1.25rem;
-            color: var(--primary-color);
-            opacity: 0.8;
-        }
-        
-        /* Panel Content */
         .panel-content {
             display: none;
+            animation: fadeIn 0.3s ease-in;
         }
         
         .panel-content.active {
             display: block;
         }
         
-        /* Progress Steps */
-        .progress-steps {
-            margin: 2rem 0;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            position: relative;
-        }
-        
-        .step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: #e9ecef;
-            z-index: 1;
-        }
-        
-        .step.completed:not(:last-child)::after {
-            background: var(--primary-color);
-        }
-        
-        .step-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e9ecef;
-            color: #6c757d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            position: relative;
-            z-index: 2;
-            transition: all 0.3s ease;
-        }
-        
-        .step.active .step-circle {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        .step.completed .step-circle {
-            background: #28a745;
-            color: white;
-        }
-        
-        .step-label {
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #6c757d;
-            text-align: center;
-        }
-        
-        .step.active .step-label {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        
-        .step.completed .step-label {
-            color: #28a745;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                z-index: 1000;
-                position: fixed;
-                height: 100vh;
-                width: 280px;
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .top-header {
-                padding: 1rem;
-                margin-bottom: 0;
-            }
-            
-            .content-wrapper {
-                padding: 1rem;
-                margin-top: 0;
-            }
-            
-            .stat-number {
-                font-size: 1.5rem;
-            }
-            
-            .stat-card {
-                margin-bottom: 1rem;
-            }
-            
-            .btn {
-                width: 100%;
-                margin-bottom: 0.5rem;
-            }
-            
-            .page-title {
-                font-size: 1.1rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .content-wrapper {
-                padding: 0.75rem;
-            }
-            
-            .top-header {
-                padding: 0.75rem;
-            }
-            
-            .stat-number {
-                font-size: 1.25rem;
-            }
-            
-            .sidebar {
-                width: 100%;
-            }
-        }
-        /* Mobile Toggle Button */
-        .sidebar-toggle {
-            display: none;
-            background: none;
+        .stat-card {
             border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            margin-right: 1rem;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
         }
         
-        .sidebar-toggle:hover {
-            color: var(--primary-color);
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
         }
         
-        @media (max-width: 768px) {
-            .sidebar-toggle {
-                display: block;
-            }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .stat-card.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.125rem;
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h1 class="sidebar-title">
-                <i class="bi bi-mortarboard me-2"></i>Student Portal
-            </h1>
-        </div>
-        
-        <div class="sidebar-nav">
-            <div class="nav-item">
-                <a href="#" class="nav-link active" data-panel="overview">
-                    <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link" data-panel="applications">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>My Applications</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link" data-panel="programs">
-                    <i class="bi bi-book"></i>
-                    <span>Available Programs</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link" data-panel="payments">
-                    <i class="bi bi-credit-card"></i>
-                    <span>Payment History</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link" data-panel="profile">
-                    <i class="bi bi-person"></i>
-                    <span>Profile</span>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                Admissions System
+            </a>
+            
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Welcome, <strong><?php echo htmlspecialchars($currentStudent['first_name']); ?></strong>
+                </span>
+                <a class="btn btn-outline-danger btn-sm" href="/logout">
+                    <i class="bi bi-box-arrow-right me-1"></i>
+                    Logout
                 </a>
             </div>
         </div>
     </nav>
     
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <header class="top-header">
-            <div class="header-left">
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="bi bi-list"></i>
-                </button>
-                <h5 class="page-title" id="pageTitle">Student Dashboard</h5>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 p-0">
+                <div class="sidebar p-3">
+                    <h6 class="text-muted mb-3">STUDENT PANEL</h6>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-panel="overview">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="applications">
+                                <i class="bi bi-file-earmark-text"></i>
+                                My Applications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="programs">
+                                <i class="bi bi-mortarboard"></i>
+                                Available Programs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="payments">
+                                <i class="bi bi-credit-card"></i>
+                                Payment History
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-panel="profile">
+                                <i class="bi bi-person"></i>
+                                Profile
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
             
-            <div class="header-right">
-                <!-- Notifications -->
-                <div class="notification-bell me-3">
-                    <button class="btn btn-link position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-bell" style="font-size: 1.2rem; color: var(--text-primary);"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
-                            0
-                        </span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 350px;">
-                        <li class="dropdown-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Notifications</span>
-                                <button class="btn btn-sm btn-link text-primary" onclick="markAllAsRead()">Mark all read</button>
-                            </div>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <div id="notificationsList">
-                            <li class="dropdown-item-text text-center py-3">
-                                <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                                <p class="text-muted mt-2 mb-0">No notifications</p>
-                            </li>
-                        </div>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-center" href="#" onclick="showPanel('notifications')">View all notifications</a></li>
-                    </ul>
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0" id="pageTitle">Student Dashboard Overview</h1>
                 </div>
                 
-                <!-- User Dropdown -->
-                <div class="user-dropdown">
-                    <div class="user-avatar" data-bs-toggle="dropdown">
-                        <?php echo strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)); ?>
+                <!-- Overview Panel -->
+                <div class="panel-content active" id="overview-panel">
+                    <div class="alert alert-success">
+                        <h4>Student Dashboard Overview</h4>
+                        <p>Welcome to the student dashboard. Navigation should be working now.</p>
+                        <p>Current time: <?php echo date('Y-m-d H:i:s'); ?></p>
+                        <button class="btn btn-primary mt-2" onclick="alert('Basic JavaScript works!'); console.log('Button clicked');">
+                            Test Basic JavaScript
+                        </button>
+                        <button class="btn btn-secondary mt-2" onclick="if(window.showPanel) { alert('showPanel function exists'); window.showPanel('applications'); } else { alert('showPanel function does NOT exist'); }">
+                            Test Navigation Function
+                        </button>
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header"><?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?></h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" data-panel="profile"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                    </ul>
+
+                    <!-- Quick Stats -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="stat-card primary">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">My Applications</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-file-earmark-text stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="stat-card warning">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Pending</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-clock-history stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="stat-card success">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="stat-label">Approved</div>
+                                        <div class="stat-number">0</div>
+                                    </div>
+                                    <i class="bi bi-check-circle stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Applications Panel -->
+                <div class="panel-content" id="applications-panel">
+                    <div class="alert alert-info">Applications Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Programs Panel -->
+                <div class="panel-content" id="programs-panel">
+                    <div class="alert alert-info">Programs Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Payment History Panel -->
+                <div class="panel-content" id="payments-panel">
+                    <div class="alert alert-info">Payments Panel - Navigation Test</div>
+                </div>
+                
+                <!-- Profile Panel -->
+                <div class="panel-content" id="profile-panel">
+                    <div class="alert alert-info">Profile Panel - Navigation Test</div>
                 </div>
             </div>
-        </header>
-        
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-            <!-- Overview Panel -->
-            <div class="panel-content active" id="overview-panel">
-                <?php include 'panels/overview.php'; ?>
-            </div>
-            
-            <!-- Applications Panel -->
-            <div class="panel-content" id="applications-panel">
-                <?php include 'panels/applications.php'; ?>
-            </div>
-            
-            <!-- Programs Panel -->
-            <div class="panel-content" id="programs-panel">
-                <?php include 'panels/programs.php'; ?>
-            </div>
-            
-            <!-- Payment History Panel -->
-            <div class="panel-content" id="payments-panel">
-                <?php include 'panels/payments.php'; ?>
-            </div>
-            
-            <!-- Profile Panel -->
-            <div class="panel-content" id="profile-panel">
-                <?php include 'panels/profile.php'; ?>
-            </div>
         </div>
-    </main>
-    
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Dashboard initialization
+        console.log('Student dashboard script loading...');
+        
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Student Dashboard');
             const navLinks = document.querySelectorAll('.nav-link[data-panel]');
             const panelContents = document.querySelectorAll('.panel-content');
             const pageTitle = document.getElementById('pageTitle');
             
+            console.log('Found nav links:', navLinks.length);
+            console.log('Found panels:', panelContents.length);
+            
+            // Panel titles mapping
             const panelTitles = {
-                'overview': 'Student Dashboard',
+                'overview': 'Student Dashboard Overview',
                 'applications': 'My Applications',
                 'programs': 'Available Programs',
                 'payments': 'Payment History',
                 'profile': 'My Profile'
             };
             
-            // Function to show panel (make it global)
+            // Global function for external calls
             window.showPanel = function(panelName) {
+                console.log('showPanel called with:', panelName);
                 
                 // Remove active class from all nav links
-                navLinks.forEach(nl => nl.classList.remove('active'));
+                navLinks.forEach(link => link.classList.remove('active'));
                 
-                // Hide all panel contents
+                // Hide all panels
                 panelContents.forEach(panel => panel.classList.remove('active'));
                 
-                // Show target panel
-                const targetPanelElement = document.getElementById(panelName + '-panel');
-                if (targetPanelElement) {
-                    targetPanelElement.classList.add('active');
-                }
-                
-                // Add active class to corresponding nav link
-                const targetNavLink = document.querySelector(`[data-panel="${panelName}"]`);
-                if (targetNavLink) {
-                    targetNavLink.classList.add('active');
+                // Show selected panel
+                const targetPanel = document.getElementById(panelName + '-panel');
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                    console.log('Panel activated:', panelName);
+                } else {
+                    console.error('Panel not found:', panelName);
                 }
                 
                 // Update page title
-                if (panelTitles[panelName]) {
+                if (pageTitle && panelTitles[panelName]) {
                     pageTitle.textContent = panelTitles[panelName];
                 }
                 
-                // Update URL without page reload
-                const url = new URL(window.location);
-                url.searchParams.set('panel', panelName);
-                window.history.pushState({}, '', url);
+                // Update nav link
+                const targetLink = document.querySelector(`[data-panel="${panelName}"]`);
+                if (targetLink) {
+                    targetLink.classList.add('active');
+                }
             };
             
-                navLinks.forEach(link => {
+            // Add click event listeners
+            navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const targetPanel = this.getAttribute('data-panel');
-                    showPanel(targetPanel);
+                    const panelName = this.getAttribute('data-panel');
+                    console.log('Nav link clicked:', panelName);
+                    window.showPanel(panelName);
                 });
             });
             
-            // Handle browser back/forward buttons
-            window.addEventListener('popstate', function(e) {
-                const urlParams = new URLSearchParams(window.location.search);
-                const panel = urlParams.get('panel') || 'overview';
-                showPanel(panel);
-            });
-            
-            // Initialize panel based on URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const initialPanel = urlParams.get('panel') || 'overview';
-            showPanel(initialPanel);
-            
-            // Mobile sidebar toggle
-            const toggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            
-            if (toggle && sidebar) {
-                toggle.addEventListener('click', () => {
-                    sidebar.classList.toggle('show');
-                });
-                
-                // Close sidebar when clicking outside
-                document.addEventListener('click', (e) => {
-                    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                        sidebar.classList.remove('show');
-                    }
-                });
-                
-                // Close sidebar when panel is selected on mobile
-                navLinks.forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth <= 768) {
-                            sidebar.classList.remove('show');
-                        }
-                    });
-                });
-            }
-            
-            // Load notifications
-            loadNotifications();
-            
-            // Auto-refresh notifications every 30 seconds
-            setInterval(loadNotifications, 30000);
+            console.log('Navigation system initialized');
         });
-        
-        // Notification functions (make them global)
-        window.loadNotifications = function() {
-            fetch('../api/notifications.php?user_id=<?php echo $_SESSION['user_id']; ?>')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateNotificationBadge(data.unread_count);
-                        updateNotificationList(data.notifications);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading notifications:', error);
-                });
-        };
-        
-        function updateNotificationBadge(count) {
-            const badge = document.getElementById('notificationBadge');
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-        
-        function updateNotificationList(notifications) {
-            const container = document.getElementById('notificationsList');
-            
-            if (notifications.length === 0) {
-                container.innerHTML = `
-                    <li class="dropdown-item-text text-center py-3">
-                        <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                        <p class="text-muted mt-2 mb-0">No notifications</p>
-                    </li>
-                `;
-                return;
-            }
-            
-            let html = '';
-            notifications.slice(0, 5).forEach(notification => {
-                const isRead = notification.is_read ? '' : 'fw-bold';
-                const timeAgo = getTimeAgo(notification.created_at);
-                
-                html += `
-                    <li class="dropdown-item ${isRead}" onclick="markAsRead(${notification.id})">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1">
-                                <div class="fw-bold">${notification.title}</div>
-                                <small class="text-muted">${timeAgo}</small>
-                            </div>
-                            ${!notification.is_read ? '<span class="badge bg-primary rounded-pill ms-2">New</span>' : ''}
-                        </div>
-                    </li>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        window.markAsRead = function(notificationId) {
-            fetch('../api/notifications.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'mark_read',
-                    notification_id: notificationId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadNotifications(); // Reload to update the list
-                }
-            })
-            .catch(error => {
-                console.error('Error marking notification as read:', error);
-            });
-        };
-        
-        window.markAllAsRead = function() {
-            fetch('../api/notifications.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'mark_all_read',
-                    user_id: <?php echo $_SESSION['user_id']; ?>
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadNotifications(); // Reload to update the list
-                }
-            })
-            .catch(error => {
-                console.error('Error marking all notifications as read:', error);
-            });
-        };
-        
-        function getTimeAgo(dateString) {
-            const now = new Date();
-            const date = new Date(dateString);
-            const diffInSeconds = Math.floor((now - date) / 1000);
-            
-            if (diffInSeconds < 60) return 'Just now';
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-            return date.toLocaleDateString();
-        }
     </script>
 </body>
 </html>

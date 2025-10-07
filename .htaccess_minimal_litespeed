@@ -1,7 +1,0 @@
-# Ultra-minimal LiteSpeed .htaccess
-RewriteEngine On
-
-# Test routes only
-RewriteRule ^test-hostinger/?$ test-hostinger.php [L,QSA]
-RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
-RewriteRule ^login/?$ login.php [L,QSA]
