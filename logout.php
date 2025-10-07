@@ -1,6 +1,7 @@
 <?php
 require_once 'config/config.php';
 require_once 'config/database.php';
+require_once 'config/Security.php';
 
 // Initialize security
 $database = new Database();
@@ -17,3 +18,4 @@ $security->logout();
 // Redirect to login page
 redirect('/login.php');
 ?>
+
