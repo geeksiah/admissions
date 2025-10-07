@@ -6,15 +6,23 @@ requireRole(['admin','super_admin','admissions_officer','reviewer']);
 
 $pageTitle = 'Admin Dashboard';
 include __DIR__ . '/../includes/header.php';
+// Brand variables (will be set from Settings later); provide sensible defaults
+$brandColor = '#2563eb';
+$logoPath = '/uploads/logos/logo.png';
+$hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
 ?>
 
 <style>
-  .layout{display:grid;grid-template-columns:240px 1fr 320px;gap:16px}
-  .sidebar{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;height:calc(100vh - 140px);position:sticky;top:80px}
-  .sidebar .title{font-weight:600;margin:4px 10px 10px 10px;color:var(--muted);text-transform:uppercase;font-size:12px}
-  .sidebar .item{display:flex;align-items:center;gap:10px;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
-  .sidebar .item:hover{background:var(--surface-hover)}
-  .sidebar .item.active{background:var(--surface-hover);outline:2px solid transparent}
+  :root{--brand: <?php echo $brandColor; ?>;}
+  .layout{display:grid;grid-template-columns:260px 1fr 320px;gap:16px}
+  .sidebar{background:var(--brand);border:none;border-radius:0;padding:16px;height:calc(100vh - 80px);position:sticky;top:64px;color:#fff}
+  .sidebar .logo{display:flex;align-items:center;gap:10px;margin:6px 6px 14px 6px}
+  .sidebar .logo img{height:34px;width:auto;display:block}
+  .sidebar .logo .placeholder{width:34px;height:34px;border-radius:8px;background:#fff;opacity:.95}
+  .sidebar .title{font-weight:600;margin:4px 10px 10px 10px;color:rgba(255,255,255,.7);text-transform:uppercase;font-size:12px}
+  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer}
+  .sidebar .item:hover{background:rgba(255,255,255,.08)}
+  .sidebar .item.active{background:rgba(255,255,255,.14);outline:2px solid transparent}
   .content{min-height:60vh}
   .hidden{display:none}
   .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
@@ -44,11 +52,24 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="layout">
   <div class="sidebar" id="sidebarNav">
-    <div class="title">Menu</div>
+    <a href="/admin/dashboard" class="logo" aria-label="Home">
+      <?php if ($hasLogo): ?>
+        <img src="<?php echo $logoPath; ?>" alt="Logo">
+      <?php else: ?>
+        <div class="placeholder"></div>
+      <?php endif; ?>
+    </a>
+    <div class="title">Navigation</div>
     <div class="item active" data-panel="overview"><i class="bi bi-speedometer2"></i> Overview</div>
     <div class="item" data-panel="applications"><i class="bi bi-list-check"></i> Applications</div>
     <div class="item" data-panel="students"><i class="bi bi-people"></i> Students</div>
     <div class="item" data-panel="programs"><i class="bi bi-mortarboard"></i> Programs</div>
+    <div class="item" data-panel="application_forms"><i class="bi bi-ui-checks"></i> Application Forms</div>
+    <div class="item" data-panel="users"><i class="bi bi-person-gear"></i> Users</div>
+    <div class="item" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</div>
+    <div class="item" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</div>
+    <div class="item" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</div>
+    <div class="item" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</div>
     <div class="item" data-panel="settings"><i class="bi bi-gear"></i> Settings</div>
   </div>
 
@@ -86,6 +107,42 @@ include __DIR__ . '/../includes/header.php';
     <div id="panel-programs" class="hidden">
       <?php if (file_exists(__DIR__.'/panels/programs.php')) { include __DIR__.'/panels/programs.php'; } else { ?>
         <div class="card"><h3>Programs</h3><p class="muted">Module scaffold. Implement CRUD for programs.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-application_forms" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/application_forms.php')) { include __DIR__.'/panels/application_forms.php'; } else { ?>
+        <div class="card"><h3>Application Forms</h3><p class="muted">Module scaffold. Build form builder and templates.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-users" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/users.php')) { include __DIR__.'/panels/users.php'; } else { ?>
+        <div class="card"><h3>Users</h3><p class="muted">Module scaffold. Admin user management, roles, permissions.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-payments" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/payments.php')) { include __DIR__.'/panels/payments.php'; } else { ?>
+        <div class="card"><h3>Payments</h3><p class="muted">Module scaffold. Transactions and gateways config.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-reports" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/reports.php')) { include __DIR__.'/panels/reports.php'; } else { ?>
+        <div class="card"><h3>Reports</h3><p class="muted">Module scaffold. Analytics and export tools.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-notifications" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/notifications.php')) { include __DIR__.'/panels/notifications.php'; } else { ?>
+        <div class="card"><h3>Notifications</h3><p class="muted">Module scaffold. Email/SMS/in-app notifications center.</p></div>
+      <?php } ?>
+    </div>
+
+    <div id="panel-communications" class="hidden">
+      <?php if (file_exists(__DIR__.'/panels/communications.php')) { include __DIR__.'/panels/communications.php'; } else { ?>
+        <div class="card"><h3>Communications</h3><p class="muted">Module scaffold. Messaging and templates.</p></div>
       <?php } ?>
     </div>
 
@@ -130,6 +187,12 @@ include __DIR__ . '/../includes/header.php';
       applications: document.getElementById('panel-applications'),
       students: document.getElementById('panel-students'),
       programs: document.getElementById('panel-programs'),
+      application_forms: document.getElementById('panel-application_forms'),
+      users: document.getElementById('panel-users'),
+      payments: document.getElementById('panel-payments'),
+      reports: document.getElementById('panel-reports'),
+      notifications: document.getElementById('panel-notifications'),
+      communications: document.getElementById('panel-communications'),
       settings: document.getElementById('panel-settings')
     };
     function show(panel){
