@@ -21,6 +21,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system
 .card{background:var(--card);border:1px solid #1f2937;border-radius:12px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);border:none;color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer}
 .btn.secondary{background:#1f2937;color:var(--text)}
+.btn.active{outline:2px solid var(--accent-2)}
 .btn:hover{filter:brightness(1.05)}
 .input{width:100%;background:#0b1220;border:1px solid #1f2937;color:var(--text);padding:10px 12px;border-radius:8px}
 .grid{display:grid;gap:16px}

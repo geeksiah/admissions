@@ -7,6 +7,15 @@ require_once __DIR__ . '/../config/config.php';
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?php echo isset($pageTitle) ? $pageTitle . ' - ' . APP_NAME : APP_NAME; ?></title>
+  <script>
+    // Initialize theme before paint
+    (function(){
+      try{
+        var theme = localStorage.getItem('ams_theme') || 'dark';
+        if(theme==='light') document.documentElement.classList.add('light');
+      }catch(e){}
+    })();
+  </script>
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -28,19 +37,16 @@ require_once __DIR__ . '/../config/config.php';
   </div>
   <div class="container">
   <script>
-    (function(){
-      try{
-        var theme = localStorage.getItem('ams_theme') || 'dark';
-        if(theme==='light') document.documentElement.classList.add('light');
-      }catch(e){}
-    })();
     window.addEventListener('DOMContentLoaded', function(){
       var btn = document.getElementById('themeToggle');
       if(!btn) return;
       btn.addEventListener('click', function(){
         var isLight = document.documentElement.classList.toggle('light');
         try{ localStorage.setItem('ams_theme', isLight ? 'light' : 'dark'); }catch(e){}
+        btn.classList.toggle('active', isLight);
       });
+      // set visual state on load
+      btn.classList.toggle('active', document.documentElement.classList.contains('light'));
     });
   </script>
 
