@@ -3,8 +3,8 @@
  * Working Student Dashboard - Production Ready
  */
 
-require_once '../config/config.php';
-require_once '../config/database.php';
+require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__) . '/config/database.php';
 
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
@@ -45,7 +45,8 @@ $stats = [
 
 // Try to get real stats if possible
 try {
-    $stmt = $database->prepare("SELECT COUNT(*) FROM applications WHERE student_id = ?");
+    $pdo = $database->getConnection();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM applications WHERE student_id = ?");
     $stmt->execute([$currentUser['id']]);
     $stats['total_applications'] = $stmt->fetchColumn();
 } catch (Exception $e) {
