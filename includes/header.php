@@ -42,12 +42,12 @@ require_once __DIR__ . '/../config/config.php';
               <span style="font-size:12px;font-weight:700"><?php echo $initials; ?></span>
             <?php endif; ?>
           </div>
-          <div id="userDropdown" style="position:absolute;right:0;top:44px;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:180px;display:none;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:1000">
-            <a href="/profile" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-person"></i> Profile</a>
-            <a href="/admin/dashboard?panel=notifications" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-bell"></i> Notifications</a>
-            <a href="/admin/dashboard?panel=settings" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-gear"></i> Settings</a>
+          <div id="userDropdown" style="position:absolute;right:0;top:44px;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:200px;display:none;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:1000">
+            <a href="/admin/dashboard?panel=profile" style="display:flex;gap:8px;align-items:center;padding:12px 14px;color:var(--text);text-decoration:none"><i class="bi bi-person"></i> Profile</a>
+            <a href="/admin/dashboard?panel=notifications" style="display:flex;gap:8px;align-items:center;padding:12px 14px;color:var(--text);text-decoration:none"><i class="bi bi-bell"></i> Notifications</a>
+            <a href="/admin/dashboard?panel=settings" style="display:flex;gap:8px;align-items:center;padding:12px 14px;color:var(--text);text-decoration:none"><i class="bi bi-gear"></i> Settings</a>
             <div style="height:1px;background:var(--border);"></div>
-            <a href="/logout" style="display:flex;gap:8px;align-items:center;padding:10px 12px;color:var(--text);text-decoration:none"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            <a href="/logout" style="display:flex;gap:8px;align-items:center;padding:12px 14px;color:var(--text);text-decoration:none"><i class="bi bi-box-arrow-right"></i> Logout</a>
           </div>
         </div>
       <?php else: ?>

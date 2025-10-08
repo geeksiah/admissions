@@ -27,16 +27,16 @@ include __DIR__ . '/../includes/header.php';
 <style>
   :root{--brand: <?php echo $brandColor; ?>;}
   .layout{display:grid;grid-template-columns:260px 1fr;gap:24px;padding-left:260px}
-  .nav{padding-left:260px;padding-right:16px}
+  .nav{padding-left:260px;padding-right:32px}
   .sidebar{background:var(--brand);border:none;border-radius:0;padding:26px 16px 16px 16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
   .sidebar .logo{display:flex;align-items:center;gap:10px;margin:4px 8px 18px 8px}
   .sidebar .logo img{height:34px;width:auto;display:block}
   .sidebar .logo .placeholder{width:34px;height:34px;border-radius:8px;background:#fff;opacity:.95}
   .sidebar .title{font-weight:600;margin:8px 10px 12px 10px;color:rgba(255,255,255,.7);text-transform:uppercase;font-size:12px}
-  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:14px 14px;border-radius:12px;cursor:pointer;transition:background .2s ease, transform .2s ease}
-  .sidebar .item:hover{background:rgba(255,255,255,.10)}
-  .sidebar .item.active{background:rgba(255,255,255,.16);outline:2px solid transparent}
-  .content{min-height:60vh;padding:12px 24px 40px 0}
+  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:16px 14px;border-radius:8px;cursor:pointer;transition:background .18s ease, transform .12s ease}
+  .sidebar .item:hover{background:rgba(255,255,255,.08)}
+  .sidebar .item.active{background:rgba(255,255,255,.14);outline:2px solid transparent}
+  .content{min-height:60vh;padding:16px 32px 48px 32px}
   .hidden{display:none}
   .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
   .stat{
@@ -119,6 +119,40 @@ include __DIR__ . '/../includes/header.php';
       </div>
     </div>
 
+    <div id="panel-profile" class="hidden">
+      <div class="panel-card">
+        <h3>Profile</h3>
+        <p class="muted">Manage your account information and avatar.</p>
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
+          <div class="panel-card" style="text-align:center">
+            <div class="avatar" style="margin:0 auto 12px auto"></div>
+            <button class="btn secondary" disabled>Upload Avatar (coming soon)</button>
+          </div>
+          <div class="panel-card">
+            <div class="muted" style="margin-bottom:8px">Account</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="muted" style="font-size:12px">First Name</label>
+                <input class="input" value="" placeholder="First name" disabled>
+              </div>
+              <div>
+                <label class="muted" style="font-size:12px">Last Name</label>
+                <input class="input" value="" placeholder="Last name" disabled>
+              </div>
+              <div>
+                <label class="muted" style="font-size:12px">Email</label>
+                <input class="input" value="" placeholder="Email" disabled>
+              </div>
+              <div>
+                <label class="muted" style="font-size:12px">Phone</label>
+                <input class="input" value="" placeholder="Phone" disabled>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="panel-applications" class="hidden">
       <?php if (file_exists(__DIR__.'/panels/applications.php')) { include __DIR__.'/panels/applications.php'; } else { ?>
         <div class="card"><h3>Applications</h3><p class="muted">Module scaffold. Implement list, filters, and workflows.</p></div>
@@ -197,6 +231,7 @@ include __DIR__ . '/../includes/header.php';
       reports: document.getElementById('panel-reports'),
       notifications: document.getElementById('panel-notifications'),
       communications: document.getElementById('panel-communications'),
+      profile: document.getElementById('panel-profile'),
       settings: document.getElementById('panel-settings')
     };
     function show(panel){
