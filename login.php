@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$hideTopActions = true;
 include __DIR__ . '/includes/header.php';
 ?>
 

@@ -24,7 +24,9 @@ require_once __DIR__ . '/../config/config.php';
 <body>
   <nav class="nav">
     <div>
+      <?php if (!isset($hideTopActions)): ?>
       <button id="sidebarToggleTop" class="btn secondary mobile-only"><i class="bi bi-list"></i></button>
+      <?php endif; ?>
     </div>
     <div class="nav-actions">
       <button id="themeToggle" class="btn secondary"><i class="bi bi-circle-half"></i><span class="desktop-only"> Theme</span></button>
@@ -51,7 +53,9 @@ require_once __DIR__ . '/../config/config.php';
           </div>
         </div>
       <?php else: ?>
-        <a href="/login" class="btn secondary"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+        <?php if (!isset($hideTopActions)): ?>
+          <a href="/login" class="btn secondary"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+        <?php endif; ?>
       <?php endif; ?>
     </div>
   </nav>
