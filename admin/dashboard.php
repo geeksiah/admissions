@@ -63,7 +63,7 @@ include __DIR__ . '/../includes/header.php';
       <div></div>
     </div>
 
-    <div id="panel-overview">
+    <div id="panel-overview" style="display:block">
       <div class="stat-grid">
         <div class="stat-card"><h4 class="stat-card-title">Total Applications</h4><div class="stat-card-value">0</div></div>
         <div class="stat-card"><h4 class="stat-card-title">Pending Review</h4><div class="stat-card-value">0</div></div>
@@ -147,12 +147,13 @@ include __DIR__ . '/../includes/header.php';
     function showPanel(panelName) {
       // Hide all panels
       const panels = panelHost.querySelectorAll(':scope > [id^="panel-"]');
-      panels.forEach(p => p.classList.add('hidden'));
+      panels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
 
       // Show the target panel
       const targetPanel = document.getElementById(`panel-${panelName}`);
       if (targetPanel) {
         targetPanel.classList.remove('hidden');
+        targetPanel.style.display = 'block';
       }
 
       // Update active state in sidebar
