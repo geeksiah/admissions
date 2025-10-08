@@ -118,6 +118,8 @@
 @media (min-width: 1025px) {
   .dashboard-content {
     padding: 32px 64px 64px 32px; /* room on the right */
+    margin-left: 260px;           /* offset fixed sidebar */
+    width: calc(100% - 260px);
   }
 }
 
