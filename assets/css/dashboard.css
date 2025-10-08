@@ -116,9 +116,24 @@
 }
 @media (min-width: 1025px) {
   .dashboard-content {
-    padding: 32px;
+    padding: 32px 64px 64px 32px; /* room on the right */
   }
 }
+
+/* --- Overview Cards & KPI --- */
+.stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.stat-card-title{margin:0 0 6px 0;font-size:13px;color:var(--muted)}
+.stat-card-value{font-size:26px;font-weight:700}
+.panel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi-box{background:var(--surface-hover);border-radius:10px;padding:12px;text-align:center}
+.kpi-label{font-size:12px;color:var(--muted)}
+.kpi-value{font-weight:700;font-size:18px}
+
+/* --- Profile Layout --- */
+.profile-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.avatar-lg{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));margin:0 auto 12px auto}
 
 /* ============================================= */
 /* Scrollbar Styles                 */
