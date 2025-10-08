@@ -128,7 +128,7 @@ include __DIR__ . '/../includes/header.php';
         $month = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())")->fetchColumn();
       } catch (Throwable $e) { /* show zeros */ }
     ?>
-    <div id="panel-overview" style="display:block">
+    <div id="panel-overview">
       <div class="stat-grid">
         <div class="stat-card"><h4 class="stat-card-title">Total Applications</h4><div class="stat-card-value"><?php echo number_format($totalApps); ?></div></div>
         <div class="stat-card"><h4 class="stat-card-title">Pending Review</h4><div class="stat-card-value"><?php echo number_format($pendingApps); ?></div></div>
@@ -154,42 +154,9 @@ include __DIR__ . '/../includes/header.php';
       </div>
     </div>
 
-    <div id="panel-profile" class="hidden">
-      <div class="panel-card">
-        <h3>Profile</h3>
-        <p class="muted">Manage your account information and avatar.</p>
-        <div class="profile-grid">
-          <div class="panel-card profile-avatar-wrapper">
-            <div class="avatar-lg"></div>
-            <button class="btn secondary" disabled>Upload Avatar (coming soon)</button>
-          </div>
-          <div class="panel-card">
-            <div class="muted" style="margin-bottom:12px;">Account</div>
-            <div class="grid cols-2">
-              <div>
-                <label class="form-label-sm">First Name</label>
-                <input class="input" value="" placeholder="First name" disabled>
-              </div>
-              <div>
-                <label class="form-label-sm">Last Name</label>
-                <input class="input" value="" placeholder="Last name" disabled>
-              </div>
-              <div>
-                <label class="form-label-sm">Email</label>
-                <input class="input" value="" placeholder="Email" disabled>
-              </div>
-              <div>
-                <label class="form-label-sm">Phone</label>
-                <input class="input" value="" placeholder="Phone" disabled>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <?php
-    $panels = ['applications', 'students', 'programs', 'application_forms', 'users', 'payments', 'reports', 'notifications', 'communications', 'settings', 'vouchers', 'fee_structures', 'backup_recovery', 'audit_trail'];
+    $panels = ['applications', 'students', 'programs', 'application_forms', 'users', 'payments', 'reports', 'notifications', 'communications', 'settings', 'vouchers', 'fee_structures', 'backup_recovery', 'audit_trail', 'profile'];
     foreach ($panels as $panel) {
       $title = ucwords(str_replace('_', ' ', $panel));
       echo "<div id='panel-{$panel}' class='hidden'>";
@@ -241,6 +208,10 @@ include __DIR__ . '/../includes/header.php';
       });
     });
 
+    // Initialize all panels as hidden first
+    const allPanels = panelHost.querySelectorAll(':scope > [id^="panel-"]');
+    allPanels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
+    
     // Show initial panel based on URL
     const initialPanel = new URL(window.location.href).searchParams.get('panel') || 'overview';
     showPanel(initialPanel);
