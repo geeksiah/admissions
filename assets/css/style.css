@@ -1,6 +1,8 @@
 /* assets/css/style.css */
 
-/* Minimal professional UI - monochrome with accent */
+/* ============================================= */
+/* Global Styles                        */
+/* ============================================= */
 :root {
   --bg: #0f172a;              /* slate-900 */
   --card: #111827;             /* gray-900 */
@@ -23,8 +25,11 @@
   --surface-hover: rgba(0,0,0,.04);
 }
 
-html, body {
-  height: 100%;
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
 }
 
 body {
@@ -32,109 +37,30 @@ body {
   background: var(--bg);
   color: var(--text);
   font: 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Ubuntu,'Helvetica Neue',Arial,sans-serif;
+  height: 100vh;
+  overflow: hidden; /* Prevents the main page from scrolling */
 }
 
-.full-viewport {
-  min-height: calc(100vh - 64px);
-}
-
-.container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 14px rgba(0,0,0,.15);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--accent);
-  border: 1px solid transparent;
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  text-decoration: none;
-  transition: filter .15s ease, background-color .15s ease, border-color .15s ease;
-}
-
-.btn.secondary {
-  background: var(--card);
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.btn:hover {
-  filter: brightness(1.1);
-}
-
-.btn.active {
-  outline: 2px solid var(--accent-2);
-}
-
-.input {
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 12px;
-  border-radius: 8px;
-}
-
-.grid {
-  display: grid;
-  gap: 16px;
-}
-.grid.cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
-.grid.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
-
+/* ============================================= */
+/* Navigation Bar                   */
+/* ============================================= */
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding: 12px 24px;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 900;
   height: 60px;
-  box-sizing: border-box;
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.nav a {
-  color: var(--text);
-  text-decoration: none;
-  margin-right: 12px;
-}
-
-.nav a.active {
-  color: var(--accent);
-}
-
-.muted {
-  color: var(--muted);
-}
-
-form .row {
-  margin-bottom: 12px;
 }
 
 .user-menu {
@@ -200,23 +126,53 @@ form .row {
   margin: 4px 0;
 }
 
-/* Responsive utilities */
+/* ============================================= */
+/* General Components               */
+/* ============================================= */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent);
+  border: 1px solid transparent;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: none;
+  transition: filter .15s ease;
+}
+
+.btn.secondary {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* ============================================= */
+/* Responsive Utilities             */
+/* ============================================= */
+.mobile-only {
+  display: none;
+}
 @media (max-width: 1024px) {
-  .grid.cols-3 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .mobile-only {
+    display: inline-flex;
+  }
 }
-@media (max-width: 640px) {
-  .grid.cols-3, .grid.cols-2 { grid-template-columns: 1fr; }
-  .container { padding: 16px; }
-  .nav { padding: 10px 16px; }
-  .btn { padding: 10px 14px; }
-}
-
-.mobile-only { display: none; }
-@media (max-width: 768px) { .mobile-only { display: inline-flex; } }
-
-/* Scrollbar theming */
-* { scrollbar-width: thin; scrollbar-color: var(--muted) var(--bg); }
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: var(--bg); }
-*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; border: 2px solid var(--bg); }
-*::-webkit-scrollbar-thumb:hover { background: var(--muted); }

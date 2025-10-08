@@ -1,249 +1,134 @@
-/* assets/css/dashboard.css */
+/* ============================================= */
+/* Refactored Dashboard Styles          */
+/* ============================================= */
+
+/*
+ * This stylesheet uses a mobile-first approach.
+ * - Base styles are for mobile.
+ * - @media (min-width: 1025px) adds styles for desktop.
+*/
 
 :root {
-    --brand: #2563eb; /* Default brand color, can be overridden by PHP */
-  }
-  
+  --brand: #2563eb; /* This can be overridden by inline PHP style */
+}
+
+/* ============================================= */
+/* Main Layout                    */
+/* ============================================= */
+
+/* --- Mobile & Tablet Base Layout --- */
+.dashboard-layout {
+  /* On mobile, the layout is a simple block layout.
+     The sidebar is positioned absolutely for the slide-out menu. */
+  position: relative;
+}
+
+/* --- Desktop Layout (using CSS Grid) --- */
+@media (min-width: 1025px) {
   .dashboard-layout {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 260px 1fr; /* Sidebar column | Content column */
+    position: static; /* Resets mobile positioning */
   }
+}
+
+/* ============================================= */
+/* Sidebar                        */
+/* ============================================= */
+
+/* --- Mobile & Tablet Sidebar (Hidden Off-Canvas) --- */
+.dashboard-sidebar {
+  background: var(--brand);
+  color: #fff;
+  width: 260px;
+  padding: 24px 16px;
+  box-sizing: border-box;
   
+  /* Positioning for the slide-out effect */
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.dashboard-sidebar.show {
+  transform: translateX(0);
+}
+
+/* --- Desktop Sidebar (Visible Grid Item) --- */
+@media (min-width: 1025px) {
   .dashboard-sidebar {
-    background: var(--brand);
-    border: none;
-    padding: 24px 16px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 260px;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+    position: sticky; /* Sticks to the top when content scrolls */
+    top: 60px;       /* Starts below the main nav bar */
+    height: calc(100vh - 60px);
+    transform: none; /* Disables the mobile slide-out effect */
+    transition: none;
+    z-index: auto;
   }
-  
-  .sidebar-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 8px 18px 8px;
-    text-decoration: none;
-  }
-  
-  .sidebar-logo-img {
-    height: 34px;
-    width: auto;
-    display: block;
-  }
-  
-  .sidebar-logo-placeholder {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.95);
-  }
-  
-  .sidebar-title {
-    font-weight: 600;
-    margin: 8px 10px 12px 10px;
-    color: rgba(255,255,255,.7);
-    text-transform: uppercase;
-    font-size: 12px;
-  }
-  
-  .sidebar-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #fff;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background .18s ease;
-    text-decoration: none;
-    margin-bottom: 4px;
-  }
-  
-  .sidebar-item:hover {
-    background: rgba(255,255,255,.08);
-  }
-  
-  .sidebar-item.active {
-    background: rgba(255,255,255,.14);
-    font-weight: 500;
-  }
-  
+}
+
+/* --- Sidebar Content & Links --- */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 8px 18px 8px;
+  text-decoration: none;
+}
+.sidebar-logo-img { height: 34px; width: auto; }
+.sidebar-logo-placeholder { width: 34px; height: 34px; border-radius: 8px; background: rgba(255, 255, 255, 0.95); }
+.sidebar-title { font-weight: 600; margin: 8px 10px 12px; color: rgba(255,255,255,.7); text-transform: uppercase; font-size: 12px; }
+.sidebar-item { display: flex; align-items: center; gap: 12px; color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; text-decoration: none; margin-bottom: 4px; transition: background .18s ease; }
+.sidebar-item:hover { background: rgba(255,255,255,.08); }
+.sidebar-item.active { background: rgba(255,255,255,.14); font-weight: 500; }
+
+/* ============================================= */
+/* Content Area                   */
+/* ============================================= */
+
+.dashboard-content {
+  padding: 16px; /* Mobile padding */
+  box-sizing: border-box;
+  height: calc(100vh - 60px); /* Fill height below nav bar */
+  overflow-y: auto; /* This is our main scrolling area */
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  min-height: 38px;
+}
+
+.hamburger {
+  display: none; /* The hamburger in the content is never needed */
+}
+
+/* --- Tablet & Desktop Padding --- */
+@media (min-width: 768px) {
   .dashboard-content {
-    padding: 24px 48px 64px 24px;
-    margin-left: 260px;
-    min-height: calc(100vh - 60px); /* 100vh minus nav height */
-    box-sizing: border-box;
-  }
-  
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    min-height: 38px; /* Same height as a button */
-  }
-  
-  .hamburger {
-    display: none;
-  }
-  
-  .hidden {
-    display: none;
-  }
-  
-  /* Stat Cards */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
-    gap: 24px;
-  }
-  
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.08);
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(0,0,0,.12);
-  }
-  
-  .stat-card-title {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  
-  .stat-card-value {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.1;
-  }
-  
-  /* Panel Cards */
-  .panel-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
     padding: 24px;
-    transition: box-shadow .15s ease;
   }
-  
-  .panel-card:hover {
-    box-shadow: 0 8px 18px rgba(0,0,0,.10);
+}
+@media (min-width: 1025px) {
+  .dashboard-content {
+    padding: 32px;
   }
-  
-  .panel-card h3 {
-      margin-top: 0;
-  }
-  
-  /* Spacing between elements */
-  .dashboard-content > [id^="panel-"] > .panel-card + .panel-card,
-  .dashboard-content > [id^="panel-"] > .stat-grid + .panel-card {
-      margin-top: 24px;
-  }
-  
-  /* Action Buttons */
-  .actions-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-  }
-  
-  /* KPI Boxes */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-  .kpi-box {
-    background: var(--surface-hover);
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
-  }
-  .kpi-label {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .kpi-value {
-    font-weight: 700;
-    font-size: 18px;
-    margin-top: 4px;
-  }
-  
-  /* Profile Panel */
-  .profile-grid {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 24px;
-    align-items: start;
-  }
-  
-  .profile-avatar-wrapper {
-    text-align: center;
-  }
-  .avatar-lg {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: linear-gradient(135deg,var(--accent),var(--accent-2));
-    margin: 0 auto 16px auto;
-  }
-  .form-label-sm {
-      font-size: 12px;
-      color: var(--muted);
-      display: block;
-      margin-bottom: 4px;
-  }
-  .input[disabled] {
-      opacity: 0.7;
-      cursor: not-allowed;
-  }
-  
-  /* Responsive Styles */
-  @media (max-width: 1280px) {
-    .dashboard-content {
-      margin-left: 0;
-      padding-left: 24px;
-    }
-  }
-  
-  @media (max-width: 1024px) {
-    .stat-grid, .profile-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .dashboard-layout {
-      grid-template-columns: 1fr;
-    }
-    .dashboard-content {
-      padding: 16px;
-      margin-left: 0;
-    }
-    .dashboard-sidebar {
-      transform: translateX(-100%);
-      transition: transform .25s ease-in-out;
-    }
-    .dashboard-sidebar.show {
-      transform: translateX(0);
-      z-index: 1000;
-    }
-    .hamburger {
-      display: inline-flex;
-    }
-  }
+}
+
+/* ============================================= */
+/* Scrollbar Styles                 */
+/* ============================================= */
+
+.dashboard-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) var(--bg);
+}
+.dashboard-content::-webkit-scrollbar { width: 10px; }
+.dashboard-content::-webkit-scrollbar-track { background: var(--bg); }
+.dashboard-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; border: 2px solid var(--bg); }
+.dashboard-content::-webkit-scrollbar-thumb:hover { background: var(--muted); }
