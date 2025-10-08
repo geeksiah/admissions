@@ -61,12 +61,13 @@
 /* --- Desktop Sidebar (Visible Grid Item) --- */
 @media (min-width: 1025px) {
   .dashboard-sidebar {
-    position: sticky; /* Sticks to the top when content scrolls */
-    top: 60px;       /* Starts below the main nav bar */
-    height: calc(100vh - 60px);
+    position: fixed; /* extend to very top on desktop */
+    top: 0;
+    left: 0;
+    height: 100vh;
     transform: none; /* Disables the mobile slide-out effect */
     transition: none;
-    z-index: auto;
+    z-index: 1000;
   }
 }
 
@@ -134,6 +135,9 @@
 /* --- Profile Layout --- */
 .profile-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
 .avatar-lg{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));margin:0 auto 12px auto}
+
+/* Utility */
+.hidden{display:none !important}
 
 /* ============================================= */
 /* Scrollbar Styles                 */
