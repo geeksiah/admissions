@@ -92,10 +92,22 @@ try {
 
 ?>
 
+<div id="toastArea" class="toast-area"></div>
 <?php if ($message): ?>
-  <div class="card" style="border-left:4px solid <?php echo $messageType==='success' ? '#10b981' : '#ef4444'; ?>; margin-bottom:12px;">
-    <strong><?php echo htmlspecialchars(strtoupper($messageType)); ?>:</strong> <?php echo htmlspecialchars($message); ?>
-  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded',function(){
+      function makeToast(text,type){
+        var area=document.getElementById('toastArea');
+        var t=document.createElement('div');
+        t.className='toast '+(type||'info');
+        t.innerHTML='<span>'+text+'</span><button class="close" aria-label="Close">&times;</button>';
+        t.querySelector('.close').onclick=function(){ t.remove(); };
+        area.appendChild(t);
+        setTimeout(function(){ t.remove(); },4000);
+      }
+      makeToast('<?php echo htmlspecialchars($message); ?>','<?php echo $messageType==='success' ? 'success' : 'error'; ?>');
+    });
+  </script>
 <?php endif; ?>
 
 <div class="panel-card">
@@ -143,8 +155,28 @@ try {
     </div>
     <div class="form-actions">
       <button class="btn" type="submit"><i class="bi bi-check2-circle"></i> Save Settings</button>
+      <button class="btn secondary" type="button" id="applyBrand">Apply Without Refresh</button>
     </div>
   </form>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var brandInput=document.querySelector('input[name="brand_color"]');
+    var applyBtn=document.getElementById('applyBrand');
+    if (applyBtn && brandInput) {
+      applyBtn.addEventListener('click', function(){
+        document.documentElement.style.setProperty('--brand', brandInput.value || '#2563eb');
+        var area=document.getElementById('toastArea');
+        var t=document.createElement('div');
+        t.className='toast info';
+        t.innerHTML='<span>Brand color applied.</span><button class="close">&times;</button>';
+        t.querySelector('.close').onclick=function(){ t.remove(); };
+        area.appendChild(t);
+        setTimeout(function(){ t.remove(); },3000);
+      });
+    }
+  });
+</script>
 
 
