@@ -26,27 +26,29 @@ include __DIR__ . '/../includes/header.php';
 
 <style>
   :root{--brand: <?php echo $brandColor; ?>;}
-  .layout{display:grid;grid-template-columns:260px 1fr;gap:20px;padding-left:260px}
-  .nav{padding-left:260px;padding-right:0}
-  .sidebar{background:var(--brand);border:none;border-radius:0;padding:16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
-  .sidebar .logo{display:flex;align-items:center;gap:10px;margin:6px 6px 14px 6px}
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:24px;padding-left:260px}
+  .nav{padding-left:260px;padding-right:16px}
+  .sidebar{background:var(--brand);border:none;border-radius:0;padding:26px 16px 16px 16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
+  .sidebar .logo{display:flex;align-items:center;gap:10px;margin:4px 8px 18px 8px}
   .sidebar .logo img{height:34px;width:auto;display:block}
   .sidebar .logo .placeholder{width:34px;height:34px;border-radius:8px;background:#fff;opacity:.95}
-  .sidebar .title{font-weight:600;margin:4px 10px 10px 10px;color:rgba(255,255,255,.7);text-transform:uppercase;font-size:12px}
-  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer}
-  .sidebar .item:hover{background:rgba(255,255,255,.08)}
-  .sidebar .item.active{background:rgba(255,255,255,.14);outline:2px solid transparent}
-  .content{min-height:60vh}
+  .sidebar .title{font-weight:600;margin:8px 10px 12px 10px;color:rgba(255,255,255,.7);text-transform:uppercase;font-size:12px}
+  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:14px 14px;border-radius:12px;cursor:pointer;transition:background .2s ease, transform .2s ease}
+  .sidebar .item:hover{background:rgba(255,255,255,.10)}
+  .sidebar .item.active{background:rgba(255,255,255,.16);outline:2px solid transparent}
+  .content{min-height:60vh;padding:12px 24px 40px 0}
   .hidden{display:none}
   .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
   .stat{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.08)
+    border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.08);transition:transform .15s ease, box-shadow .15s ease
   }
   .stat h4{margin:0 0 6px 0;font-size:13px;color:var(--muted)}
   .stat .value{font-size:26px;font-weight:700}
-  .panel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .stat:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.12)}
+  .panel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;transition:box-shadow .15s ease}
+  .panel-card:hover{box-shadow:0 8px 18px rgba(0,0,0,.10)}
   .right-rail{display:none}
   .profile{display:flex;gap:12px;align-items:center}
   .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
@@ -108,7 +110,7 @@ include __DIR__ . '/../includes/header.php';
       </div>
       <div class="panel-card" style="margin-top:16px;">
         <h3>Performance Overview</h3>
-        <div style="height:180px;background:var(--surface-hover);border-radius:10px"></div>
+        <div style="height:200px;background:var(--surface-hover);border-radius:10px"></div>
       </div>
       <div class="panel-card" style="margin-top:16px;">
         <h3>Quick Actions</h3>
