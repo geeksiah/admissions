@@ -10,6 +10,55 @@ $logoPath = '/uploads/logos/logo.png'; // Default
 try {
   $db = new Database();
   $pdo = $db->getConnection();
+  // Ensure required schemas (idempotent)
+  $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(100) UNIQUE,
+      email VARCHAR(150) UNIQUE,
+      password VARCHAR(255),
+      role VARCHAR(50) DEFAULT 'admin',
+      is_active TINYINT(1) DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS students (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      first_name VARCHAR(100), last_name VARCHAR(100), email VARCHAR(150), phone VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS programs (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(150), status VARCHAR(30) DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS applications (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      student_id INT UNSIGNED, program_id INT UNSIGNED,
+      status VARCHAR(30) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_status(status), INDEX idx_created(created_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      application_id INT UNSIGNED, amount DECIMAL(10,2) DEFAULT 0,
+      status VARCHAR(30) DEFAULT 'pending', method VARCHAR(50) DEFAULT '',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_pstatus(status)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS vouchers (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      serial VARCHAR(100) UNIQUE, pin VARCHAR(100), is_used TINYINT(1) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNSIGNED, title VARCHAR(150), body TEXT, is_read TINYINT(1) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $pdo->exec("CREATE TABLE IF NOT EXISTS messages (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      sender_id INT UNSIGNED, recipient_id INT UNSIGNED, subject VARCHAR(150), body TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   // Ensure table exists safely
   $pdo->exec("CREATE TABLE IF NOT EXISTS system_config (
       config_key VARCHAR(100) PRIMARY KEY,
@@ -63,17 +112,29 @@ include __DIR__ . '/../includes/header.php';
       <div></div>
     </div>
 
+    <?php
+      // Overview stats
+      $totalApps = 0; $pendingApps = 0; $activePrograms = 0; $today = 0; $week = 0; $month = 0;
+      try {
+        $totalApps = (int)$pdo->query("SELECT COUNT(*) FROM applications")->fetchColumn();
+        $pendingApps = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE status='pending'")->fetchColumn();
+        $activePrograms = (int)$pdo->query("SELECT COUNT(*) FROM programs WHERE status='active'")->fetchColumn();
+        $today = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE DATE(created_at)=CURDATE()")->fetchColumn();
+        $week = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE YEARWEEK(created_at,1)=YEARWEEK(CURDATE(),1)")->fetchColumn();
+        $month = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())")->fetchColumn();
+      } catch (Throwable $e) { /* show zeros */ }
+    ?>
     <div id="panel-overview" style="display:block">
       <div class="stat-grid">
-        <div class="stat-card"><h4 class="stat-card-title">Total Applications</h4><div class="stat-card-value">0</div></div>
-        <div class="stat-card"><h4 class="stat-card-title">Pending Review</h4><div class="stat-card-value">0</div></div>
-        <div class="stat-card"><h4 class="stat-card-title">Active Programs</h4><div class="stat-card-value">0</div></div>
+        <div class="stat-card"><h4 class="stat-card-title">Total Applications</h4><div class="stat-card-value"><?php echo number_format($totalApps); ?></div></div>
+        <div class="stat-card"><h4 class="stat-card-title">Pending Review</h4><div class="stat-card-value"><?php echo number_format($pendingApps); ?></div></div>
+        <div class="stat-card"><h4 class="stat-card-title">Active Programs</h4><div class="stat-card-value"><?php echo number_format($activePrograms); ?></div></div>
       </div>
       <div class="panel-card">
         <div class="kpi-grid">
-          <div class="kpi-box"><div class="kpi-label">Today</div><div class="kpi-value">0</div></div>
-          <div class="kpi-box"><div class="kpi-label">This Week</div><div class="kpi-value">0</div></div>
-          <div class="kpi-box"><div class="kpi-label">This Month</div><div class="kpi-value">0</div></div>
+          <div class="kpi-box"><div class="kpi-label">Today</div><div class="kpi-value"><?php echo number_format($today); ?></div></div>
+          <div class="kpi-box"><div class="kpi-label">This Week</div><div class="kpi-value"><?php echo number_format($week); ?></div></div>
+          <div class="kpi-box"><div class="kpi-label">This Month</div><div class="kpi-value"><?php echo number_format($month); ?></div></div>
         </div>
       </div>
       <div class="panel-card">
