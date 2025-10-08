@@ -27,6 +27,7 @@ require_once __DIR__ . '/../config/config.php';
   <div class="nav">
     <div></div>
     <div style="display:flex;align-items:center;gap:10px">
+      <button id="sidebarToggleTop" class="btn secondary mobile-only" style="margin-right:8px"><i class="bi bi-list"></i></button>
       <button id="themeToggle" class="btn secondary" style="margin-right:8px"><i class="bi bi-circle-half"></i> Theme</button>
       <?php if (isLoggedIn()): ?>
         <div class="user-menu" style="position:relative">
@@ -81,6 +82,19 @@ require_once __DIR__ . '/../config/config.php';
           dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
         });
         document.addEventListener('click', function(){ dropdown.style.display = 'none'; });
+      }
+
+      // mobile sidebar toggle
+      var topToggle = document.getElementById('sidebarToggleTop');
+      var sb = document.getElementById('sidebarNav');
+      if (topToggle && sb) {
+        topToggle.addEventListener('click', function(e){
+          e.stopPropagation();
+          sb.classList.toggle('show');
+          topToggle.innerHTML = sb.classList.contains('show') ? '<i class="bi bi-x"></i>' : '<i class="bi bi-list"></i>';
+        });
+        document.addEventListener('click', function(){ if (sb.classList.contains('show')) { sb.classList.remove('show'); topToggle.innerHTML = '<i class="bi bi-list"></i>'; } });
+        sb.addEventListener('click', function(e){ e.stopPropagation(); });
       }
     });
   </script>

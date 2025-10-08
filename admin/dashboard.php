@@ -27,16 +27,16 @@ include __DIR__ . '/../includes/header.php';
 <style>
   :root{--brand: <?php echo $brandColor; ?>;}
   .layout{display:grid;grid-template-columns:260px 1fr;gap:24px;padding-left:260px}
-  .nav{padding-left:260px;padding-right:32px}
+  .nav{padding-left:260px;padding-right:64px}
   .sidebar{background:var(--brand);border:none;border-radius:0;padding:26px 16px 16px 16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
   .sidebar .logo{display:flex;align-items:center;gap:10px;margin:4px 8px 18px 8px}
   .sidebar .logo img{height:34px;width:auto;display:block}
   .sidebar .logo .placeholder{width:34px;height:34px;border-radius:8px;background:#fff;opacity:.95}
   .sidebar .title{font-weight:600;margin:8px 10px 12px 10px;color:rgba(255,255,255,.7);text-transform:uppercase;font-size:12px}
-  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:16px 14px;border-radius:8px;cursor:pointer;transition:background .18s ease, transform .12s ease}
+  .sidebar .item{display:flex;align-items:center;gap:10px;color:#fff;padding:12px 12px;border-radius:8px;cursor:pointer;transition:background .18s ease, transform .12s ease}
   .sidebar .item:hover{background:rgba(255,255,255,.08)}
   .sidebar .item.active{background:rgba(255,255,255,.14);outline:2px solid transparent}
-  .content{min-height:60vh;padding:16px 32px 48px 32px}
+  .content{min-height:60vh;padding:24px 48px 64px 32px;max-width:1360px}
   .hidden{display:none}
   .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
   .stat{
@@ -59,8 +59,8 @@ include __DIR__ . '/../includes/header.php';
   @media (max-width: 1280px){ .layout{grid-template-columns:1fr;padding-left:260px} }
   @media (max-width: 768px){
     .layout{grid-template-columns:1fr;padding-left:0}
-    .nav{padding-left:16px}
-    .sidebar{left:0;top:0;z-index:1000;width:240px;transform:translateX(-260px);transition:transform .2s ease}
+    .nav{padding-left:12px;padding-right:12px}
+    .sidebar{left:0;top:0;z-index:1000;width:260px;transform:translateX(-260px);transition:transform .2s ease}
     .sidebar.show{transform:translateX(0)}
     .hamburger{display:inline-flex}
   }

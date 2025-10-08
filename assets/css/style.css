@@ -32,7 +32,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system
 .grid{display:grid;gap:16px}
 .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.nav{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 20px}
+.nav{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 20px;position:sticky;top:0;z-index:900}
 .nav a{color:var(--text);text-decoration:none;margin-right:12px}
 .nav a.active{color:var(--accent)}
 .muted{color:var(--muted)}
@@ -48,6 +48,9 @@ form .row{margin-bottom:12px}
   .nav{padding:10px 12px}
   .btn{padding:10px 14px}
 }
+
+.mobile-only{display:none}
+@media (max-width: 768px){ .mobile-only{display:inline-flex} }
 
 /* Scrollbar theming */
 *{scrollbar-width:thin;scrollbar-color: var(--muted) var(--bg)}
