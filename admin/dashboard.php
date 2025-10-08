@@ -177,8 +177,8 @@ include __DIR__ . '/../includes/header.php';
     const navItems = document.querySelectorAll('#sidebarNav .sidebar-item');
     const panelHost = document.getElementById('panelHost');
     function showPanel(panelName) {
-      // Hide all panels
-      const panels = panelHost.querySelectorAll(':scope > [id^="panel-"]');
+      // Hide all panels (avoid :scope for broader compatibility)
+      const panels = panelHost.querySelectorAll('[id^="panel-"]');
       panels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
 
       // Show the target panel
@@ -208,8 +208,8 @@ include __DIR__ . '/../includes/header.php';
       });
     });
 
-    // Initialize all panels as hidden first
-    const allPanels = panelHost.querySelectorAll(':scope > [id^="panel-"]');
+    // Initialize all panels as hidden first (avoid :scope)
+    const allPanels = panelHost.querySelectorAll('[id^="panel-"]');
     allPanels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
     
     // Show initial panel based on URL
@@ -218,30 +218,37 @@ include __DIR__ . '/../includes/header.php';
 
     // --- Mobile Sidebar Toggle ---
     const sidebar = document.getElementById('sidebarNav');
-    const toggleButtons = [
-        document.getElementById('toggleSidebar'), // Hamburger in content
-        document.getElementById('sidebarToggleTop')   // Hamburger in top nav
-    ];
+    const toggleSelectors = '#toggleSidebar, #sidebarToggleTop';
+
+    function toggleSidebar(e){
+      if (!sidebar) return;
+      if (e) e.stopPropagation();
+      sidebar.classList.toggle('show');
+    }
 
     if (sidebar) {
-        toggleButtons.forEach(button => {
-            if (button) {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    sidebar.classList.toggle('show');
-                });
-            }
-        });
+      // Delegate clicks from either toggle button
+      document.addEventListener('click', (e) => {
+        const trigger = e.target.closest(toggleSelectors);
+        if (trigger) {
+          toggleSidebar(e);
+          return;
+        }
+        // Close when clicking outside on mobile
+        if (window.innerWidth <= 768 && sidebar.classList.contains('show')) {
+          sidebar.classList.remove('show');
+        }
+      });
 
-        // Close sidebar when clicking outside of it on mobile
-        document.addEventListener('click', () => {
-            if (window.innerWidth <= 768 && sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
-            }
-        });
+      // Prevent clicks inside the sidebar from closing it
+      sidebar.addEventListener('click', (e) => e.stopPropagation());
 
-        // Prevent clicks inside the sidebar from closing it
-        sidebar.addEventListener('click', (e) => e.stopPropagation());
+      // Close with ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+          sidebar.classList.remove('show');
+        }
+      });
     }
   })();
 </script>
