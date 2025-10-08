@@ -8,7 +8,6 @@ require_once __DIR__ . '/../config/config.php';
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' - ' . APP_NAME : APP_NAME; ?></title>
   <script>
-    // Initialize theme before paint
     (function(){
       try {
         var theme = localStorage.getItem('ams_theme') || 'dark';
@@ -58,7 +57,6 @@ require_once __DIR__ . '/../config/config.php';
 
 <script>
   document.addEventListener('DOMContentLoaded', function(){
-    // --- Theme Toggle ---
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
       const doc = document.documentElement;
@@ -70,7 +68,6 @@ require_once __DIR__ . '/../config/config.php';
       });
     }
 
-    // --- User Dropdown ---
     const avatarBtn = document.getElementById('avatarBtn');
     const dropdown = document.getElementById('userDropdown');
     if (avatarBtn && dropdown) {

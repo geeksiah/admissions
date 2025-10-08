@@ -28,7 +28,7 @@ $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
 $pageTitle = 'Admin Dashboard';
 include __DIR__ . '/../includes/header.php';
 ?>
-<link rel="stylesheet" href="/assets/css/dashboard.css">
+<link rel="stylesheet" href="/../assets/css/dashboard.css">
 <style>
   :root { --brand: <?php echo htmlspecialchars($brandColor); ?>; }
 </style>
