@@ -102,6 +102,10 @@ include __DIR__ . '/../includes/header.php';
     <a href="#reports" class="sidebar-item" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</a>
     <a href="#notifications" class="sidebar-item" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
     <a href="#communications" class="sidebar-item" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</a>
+    <a href="#vouchers" class="sidebar-item" data-panel="vouchers"><i class="bi bi-ticket"></i> Vouchers</a>
+    <a href="#fee_structures" class="sidebar-item" data-panel="fee_structures"><i class="bi bi-currency-dollar"></i> Fee Structures</a>
+    <a href="#backup_recovery" class="sidebar-item" data-panel="backup_recovery"><i class="bi bi-cloud-arrow-down"></i> Backup & Recovery</a>
+    <a href="#audit_trail" class="sidebar-item" data-panel="audit_trail"><i class="bi bi-shield-check"></i> Audit Trail</a>
     <a href="#settings" class="sidebar-item" data-panel="settings"><i class="bi bi-gear"></i> Settings</a>
   </aside>
 
@@ -185,7 +189,7 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <?php
-    $panels = ['applications', 'students', 'programs', 'application_forms', 'users', 'payments', 'reports', 'notifications', 'communications', 'settings'];
+    $panels = ['applications', 'students', 'programs', 'application_forms', 'users', 'payments', 'reports', 'notifications', 'communications', 'settings', 'vouchers', 'fee_structures', 'backup_recovery', 'audit_trail'];
     foreach ($panels as $panel) {
       $title = ucwords(str_replace('_', ' ', $panel));
       echo "<div id='panel-{$panel}' class='hidden'>";

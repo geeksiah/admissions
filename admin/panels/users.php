@@ -215,17 +215,17 @@ try{
         <tr style="border-bottom:1px solid var(--border)">
           <td style="padding:10px">
             <div>
-              <div style="font-weight:500"><?php echo htmlspecialchars($r['first_name'].' '.$r['last_name']); ?></div>
-              <div class="muted" style="font-size:12px"><?php echo htmlspecialchars($r['username'].' • '.$r['email']); ?></div>
+              <div style="font-weight:500"><?php echo htmlspecialchars(($r['first_name'] ?? '').' '.($r['last_name'] ?? '')); ?></div>
+              <div class="muted" style="font-size:12px"><?php echo htmlspecialchars(($r['username'] ?? '').' • '.($r['email'] ?? '')); ?></div>
             </div>
           </td>
           <td style="padding:10px">
-            <span class="muted"><?php echo htmlspecialchars($r['role']); ?></span>
+            <span class="muted"><?php echo htmlspecialchars($r['role'] ?? 'admin'); ?></span>
           </td>
           <td style="padding:10px">
-            <?php if($r['locked_until'] && strtotime($r['locked_until']) > time()): ?>
+            <?php if(isset($r['locked_until']) && $r['locked_until'] && strtotime($r['locked_until']) > time()): ?>
               <span style="color:#ef4444;font-size:12px">Locked</span>
-            <?php elseif($r['is_active']): ?>
+            <?php elseif($r['is_active'] ?? 1): ?>
               <span style="color:#10b981;font-size:12px">Active</span>
             <?php else: ?>
               <span style="color:#f59e0b;font-size:12px">Inactive</span>
@@ -233,7 +233,7 @@ try{
           </td>
           <td style="padding:10px">
             <span class="muted" style="font-size:12px">
-              <?php echo $r['last_login'] ? date('M j, Y g:i A', strtotime($r['last_login'])) : 'Never'; ?>
+              <?php echo isset($r['last_login']) && $r['last_login'] ? date('M j, Y g:i A', strtotime($r['last_login'])) : 'Never'; ?>
             </span>
           </td>
           <td style="padding:10px;display:flex;gap:4px;flex-wrap:wrap">
