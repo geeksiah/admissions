@@ -38,21 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 
-<div class="card" style="max-width:480px;margin:40px auto;">
-  <h2 class="mb-2">Sign in</h2>
-  <p class="muted">Use your administrator account.</p>
-  <?php if ($error): ?><div class="muted" style="color:#f87171;margin:8px 0;"><?php echo $error; ?></div><?php endif; ?>
-  <form method="post">
-    <div class="row">
-      <label>Username</label>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h2 class="auth-title">Sign in</h2>
+    <p class="muted">Use your administrator account.</p>
+    <?php if ($error): ?><div class="muted" style="color:#f87171;margin:8px 0;"><?php echo $error; ?></div><?php endif; ?>
+    <form method="post">
+      <label class="form-label">Username or Email</label>
       <input class="input" name="username" required>
-    </div>
-    <div class="row">
-      <label>Password</label>
+      <label class="form-label">Password</label>
       <input class="input" type="password" name="password" required>
-    </div>
-    <button class="btn" type="submit"><i class="bi bi-box-arrow-in-right"></i> Login</button>
-  </form>
+      <div class="form-actions">
+        <button class="btn block" type="submit"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

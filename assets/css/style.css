@@ -166,6 +166,16 @@ body {
 }
 
 /* ============================================= */
+/* Auth / Forms                   */
+/* ============================================= */
+.auth-wrapper{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 32px;max-width:620px;width:100%;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.auth-title{margin:0 0 8px 0;font-size:24px;font-weight:700}
+.form-label{display:block;margin:10px 0 6px 2px;color:var(--muted);font-size:13px}
+.form-actions{margin-top:16px;display:flex;gap:10px}
+.btn.block{width:100%}
+
+/* ============================================= */
 /* Responsive Utilities             */
 /* ============================================= */
 .mobile-only {
