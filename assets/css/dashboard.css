@@ -118,9 +118,13 @@
   .dashboard-content {
     padding: 32px 64px 64px 32px; /* room on the right */
     margin-left: 260px;           /* offset fixed sidebar */
-    width: calc(100% - 260px);
+    width: calc(100vw - 260px);   /* ensure full viewport width minus sidebar */
+    min-width: 0; display:block; box-sizing:border-box;
   }
 }
+
+/* Ensure cards/panels stretch inside content */
+.dashboard-content .panel-card,.dashboard-content .stat-grid{max-width:100%;}
 
 /* --- Overview Cards & KPI --- */
 .stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
