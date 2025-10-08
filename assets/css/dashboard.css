@@ -26,9 +26,8 @@
 /* --- Desktop Layout (using CSS Grid) --- */
 @media (min-width: 1025px) {
   .dashboard-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr; /* Sidebar column | Content column */
-    position: static; /* Resets mobile positioning */
+    display: block; /* Sidebar is fixed; let content span full width */
+    position: static;
   }
 }
 
