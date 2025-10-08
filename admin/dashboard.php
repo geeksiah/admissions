@@ -26,7 +26,7 @@ include __DIR__ . '/../includes/header.php';
 
 <style>
   :root{--brand: <?php echo $brandColor; ?>;}
-  .layout{display:grid;grid-template-columns:260px 1fr 320px;gap:16px;padding-left:260px}
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:20px;padding-left:260px}
   .nav{padding-left:260px;padding-right:0}
   .sidebar{background:var(--brand);border:none;border-radius:0;padding:16px;position:fixed;top:0;left:0;bottom:0;width:260px;color:#fff;margin:0}
   .sidebar .logo{display:flex;align-items:center;gap:10px;margin:6px 6px 14px 6px}
@@ -47,14 +47,14 @@ include __DIR__ . '/../includes/header.php';
   .stat h4{margin:0 0 6px 0;font-size:13px;color:var(--muted)}
   .stat .value{font-size:26px;font-weight:700}
   .panel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
-  .right-rail{position:sticky;top:80px;height:calc(100vh - 140px);display:flex;flex-direction:column;gap:16px}
+  .right-rail{display:none}
   .profile{display:flex;gap:12px;align-items:center}
   .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
   .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
   .kpi .box{background:var(--surface-hover);border-radius:10px;padding:10px;text-align:center}
   .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .hamburger{display:none}
-  @media (max-width: 1280px){ .layout{grid-template-columns:1fr;padding-left:260px} .right-rail{display:none} }
+  @media (max-width: 1280px){ .layout{grid-template-columns:1fr;padding-left:260px} }
   @media (max-width: 768px){
     .layout{grid-template-columns:1fr;padding-left:0}
     .nav{padding-left:16px}
@@ -88,7 +88,7 @@ include __DIR__ . '/../includes/header.php';
   </div>
 
   <div class="content" id="panelHost">
-    <div class="toolbar">
+    <div class="toolbar" style="margin-top:8px">
       <button class="btn secondary hamburger" id="toggleSidebar"><i class="bi bi-list"></i></button>
       <div class="muted">Dashboard</div>
       <div></div>
@@ -98,6 +98,17 @@ include __DIR__ . '/../includes/header.php';
         <div class="stat"><h4>Total Applications</h4><div class="value">0</div></div>
         <div class="stat"><h4>Pending Review</h4><div class="value">0</div></div>
         <div class="stat"><h4>Active Programs</h4><div class="value">0</div></div>
+      </div>
+      <div class="panel-card" style="margin-top:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="box"><div class="muted" style="font-size:12px">Today</div><div style="font-weight:700;font-size:18px">0</div></div>
+          <div class="box"><div class="muted" style="font-size:12px">Week</div><div style="font-weight:700;font-size:18px">0</div></div>
+          <div class="box"><div class="muted" style="font-size:12px">Month</div><div style="font-weight:700;font-size:18px">0</div></div>
+        </div>
+      </div>
+      <div class="panel-card" style="margin-top:16px;">
+        <h3>Performance Overview</h3>
+        <div style="height:180px;background:var(--surface-hover);border-radius:10px"></div>
       </div>
       <div class="panel-card" style="margin-top:16px;">
         <h3>Quick Actions</h3>
@@ -167,30 +178,7 @@ include __DIR__ . '/../includes/header.php';
     </div>
   </div>
 
-  <div class="right-rail">
-    <div class="panel-card">
-      <div class="profile">
-        <div class="avatar"></div>
-        <div>
-          <div style="font-weight:600">Administrator</div>
-          <div class="muted" style="font-size:12px">Welcome back</div>
-        </div>
-      </div>
-      <div class="kpi">
-        <div class="box"><div class="muted" style="font-size:12px">Today</div><div style="font-weight:700">0</div></div>
-        <div class="box"><div class="muted" style="font-size:12px">Week</div><div style="font-weight:700">0</div></div>
-        <div class="box"><div class="muted" style="font-size:12px">Month</div><div style="font-weight:700">0</div></div>
-      </div>
-    </div>
-    <div class="panel-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h4 style="margin:0">Campaign</h4>
-        <span class="btn secondary" style="padding:6px 10px;font-size:12px">Active</span>
-      </div>
-      <div class="muted" style="margin-top:8px;font-size:13px">Performance preview</div>
-      <div style="height:120px;background:var(--surface-hover);border-radius:10px;margin-top:10px"></div>
-    </div>
-  </div>
+  <div class="right-rail"></div>
 </div>
 
 <script>

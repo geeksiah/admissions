@@ -25,9 +25,7 @@ require_once __DIR__ . '/../config/config.php';
 </head>
 <body>
   <div class="nav">
-    <div>
-      <a href="/" class="active"><i class="bi bi-mortarboard"></i> <?php echo APP_NAME; ?></a>
-    </div>
+    <div></div>
     <div style="display:flex;align-items:center;gap:10px">
       <button id="themeToggle" class="btn secondary" style="margin-right:8px"><i class="bi bi-circle-half"></i> Theme</button>
       <?php if (isLoggedIn()): ?>
