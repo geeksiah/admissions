@@ -25,7 +25,7 @@ require_once __DIR__ . '/../config/config.php';
   <nav class="nav">
     <div>
       <?php if (!isset($hideTopActions)): ?>
-      <button id="sidebarToggleTop" class="btn secondary mobile-only"><i class="bi bi-list"></i></button>
+      <button id="sidebarToggleTop" class="btn secondary mobile-only" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
       <?php endif; ?>
     </div>
     <div class="nav-actions">

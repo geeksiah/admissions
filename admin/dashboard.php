@@ -92,26 +92,25 @@ include __DIR__ . '/../includes/header.php';
       <?php endif; ?>
     </a>
     <div class="sidebar-title">Navigation</div>
-    <a href="#overview" class="sidebar-item active" data-panel="overview"><i class="bi bi-speedometer2"></i> Overview</a>
-    <a href="#applications" class="sidebar-item" data-panel="applications"><i class="bi bi-list-check"></i> Applications</a>
-    <a href="#students" class="sidebar-item" data-panel="students"><i class="bi bi-people"></i> Students</a>
-    <a href="#programs" class="sidebar-item" data-panel="programs"><i class="bi bi-mortarboard"></i> Programs</a>
-    <a href="#application_forms" class="sidebar-item" data-panel="application_forms"><i class="bi bi-ui-checks"></i> Application Forms</a>
-    <a href="#users" class="sidebar-item" data-panel="users"><i class="bi bi-person-gear"></i> Users</a>
-    <a href="#payments" class="sidebar-item" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</a>
-    <a href="#reports" class="sidebar-item" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</a>
-    <a href="#notifications" class="sidebar-item" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
-    <a href="#communications" class="sidebar-item" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</a>
-    <a href="#vouchers" class="sidebar-item" data-panel="vouchers"><i class="bi bi-ticket"></i> Vouchers</a>
-    <a href="#fee_structures" class="sidebar-item" data-panel="fee_structures"><i class="bi bi-currency-dollar"></i> Fee Structures</a>
-    <a href="#backup_recovery" class="sidebar-item" data-panel="backup_recovery"><i class="bi bi-cloud-arrow-down"></i> Backup & Recovery</a>
-    <a href="#audit_trail" class="sidebar-item" data-panel="audit_trail"><i class="bi bi-shield-check"></i> Audit Trail</a>
-    <a href="#settings" class="sidebar-item" data-panel="settings"><i class="bi bi-gear"></i> Settings</a>
+    <a href="?panel=overview" class="sidebar-item active" data-panel="overview"><i class="bi bi-speedometer2"></i> Overview</a>
+    <a href="?panel=applications" class="sidebar-item" data-panel="applications"><i class="bi bi-list-check"></i> Applications</a>
+    <a href="?panel=students" class="sidebar-item" data-panel="students"><i class="bi bi-people"></i> Students</a>
+    <a href="?panel=programs" class="sidebar-item" data-panel="programs"><i class="bi bi-mortarboard"></i> Programs</a>
+    <a href="?panel=application_forms" class="sidebar-item" data-panel="application_forms"><i class="bi bi-ui-checks"></i> Application Forms</a>
+    <a href="?panel=users" class="sidebar-item" data-panel="users"><i class="bi bi-person-gear"></i> Users</a>
+    <a href="?panel=payments" class="sidebar-item" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</a>
+    <a href="?panel=reports" class="sidebar-item" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</a>
+    <a href="?panel=notifications" class="sidebar-item" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
+    <a href="?panel=communications" class="sidebar-item" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</a>
+    <a href="?panel=vouchers" class="sidebar-item" data-panel="vouchers"><i class="bi bi-ticket"></i> Vouchers</a>
+    <a href="?panel=fee_structures" class="sidebar-item" data-panel="fee_structures"><i class="bi bi-currency-dollar"></i> Fee Structures</a>
+    <a href="?panel=backup_recovery" class="sidebar-item" data-panel="backup_recovery"><i class="bi bi-cloud-arrow-down"></i> Backup & Recovery</a>
+    <a href="?panel=audit_trail" class="sidebar-item" data-panel="audit_trail"><i class="bi bi-shield-check"></i> Audit Trail</a>
+    <a href="?panel=settings" class="sidebar-item" data-panel="settings"><i class="bi bi-gear"></i> Settings</a>
   </aside>
 
   <main class="dashboard-content" id="panelHost">
     <div class="toolbar">
-      <button class="btn secondary hamburger" id="toggleSidebar"><i class="bi bi-list"></i></button>
       <div class="muted">Dashboard</div>
       <div></div>
     </div>
@@ -194,11 +193,12 @@ include __DIR__ . '/../includes/header.php';
         item.classList.toggle('active', item.dataset.panel === panelName);
       });
       
-      // Update URL without reloading
+      // Update URL without adding hash
       try {
-        const url = new URL(window.location);
+        const url = new URL(window.location.href);
+        url.hash = '';
         url.searchParams.set('panel', panelName);
-        history.replaceState({}, '', url);
+        history.replaceState({}, '', url.toString());
       } catch(e) {}
     }
 
@@ -224,7 +224,7 @@ include __DIR__ . '/../includes/header.php';
     allPanels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
     
     // Show initial panel based on URL
-    const initialPanel = new URL(window.location.href).searchParams.get('panel') || 'overview';
+    const initialPanel = (new URL(window.location.href).searchParams.get('panel') || 'overview').replace('#','');
     showPanel(initialPanel);
 
     // --- Mobile Sidebar Toggle ---
