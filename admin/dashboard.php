@@ -175,6 +175,7 @@ include __DIR__ . '/../includes/header.php';
   (function(){
     // --- Panel Navigation ---
     const navItems = document.querySelectorAll('#sidebarNav .sidebar-item');
+    const sidebarEl = document.getElementById('sidebarNav');
     const panelHost = document.getElementById('panelHost');
     function showPanel(panelName) {
       // Hide all panels (avoid :scope for broader compatibility)
@@ -201,12 +202,22 @@ include __DIR__ . '/../includes/header.php';
       } catch(e) {}
     }
 
+    // Click handlers (direct + delegated for robustness)
     navItems.forEach(item => {
       item.addEventListener('click', function(e) {
         e.preventDefault();
         showPanel(this.dataset.panel);
       });
     });
+    if (sidebarEl) {
+      sidebarEl.addEventListener('click', function(e){
+        const link = e.target.closest('.sidebar-item');
+        if (link && link.dataset.panel) {
+          e.preventDefault();
+          showPanel(link.dataset.panel);
+        }
+      });
+    }
 
     // Initialize all panels as hidden first (avoid :scope)
     const allPanels = panelHost.querySelectorAll('[id^="panel-"]');
@@ -249,6 +260,12 @@ include __DIR__ . '/../includes/header.php';
           sidebar.classList.remove('show');
         }
       });
+
+      // Also bind direct listeners (older browsers)
+      const topBtn = document.getElementById('sidebarToggleTop');
+      const contentBtn = document.getElementById('toggleSidebar');
+      if (topBtn) topBtn.addEventListener('click', toggleSidebar);
+      if (contentBtn) contentBtn.addEventListener('click', toggleSidebar);
     }
   })();
 </script>

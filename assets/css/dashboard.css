@@ -42,6 +42,7 @@
   width: 260px;
   padding: 24px 16px;
   box-sizing: border-box;
+  overflow-y: auto; /* enable scroll when menu grows */
   
   /* Positioning for the slide-out effect */
   position: fixed;
@@ -104,9 +105,8 @@
   min-height: 38px;
 }
 
-.hamburger {
-  display: none; /* The hamburger in the content is never needed */
-}
+.hamburger { display: inline-flex; }
+@media (min-width: 1025px) { .hamburger { display: none; } }
 
 /* --- Tablet & Desktop Padding --- */
 @media (min-width: 768px) {
@@ -156,3 +156,10 @@
 .dashboard-content::-webkit-scrollbar-track { background: var(--bg); }
 .dashboard-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; border: 2px solid var(--bg); }
 .dashboard-content::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Sidebar scrollbar (match brand color softly) */
+.dashboard-sidebar { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) var(--brand); }
+.dashboard-sidebar::-webkit-scrollbar { width: 10px; }
+.dashboard-sidebar::-webkit-scrollbar-track { background: var(--brand); }
+.dashboard-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); border-radius: 8px; border: 2px solid var(--brand); }
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.5); }

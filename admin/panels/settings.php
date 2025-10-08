@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Email/SMS
             'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_encryption',
             'sms_provider','sms_key','sms_sender',
+            'email_notifications_enabled','sms_notifications_enabled',
             // Application options
             'mode_toggle','application_fee','acceptance_fee','academic_session','voucher_required',
             'documents_required'
@@ -94,6 +95,7 @@ $defaults = [
     // Email/SMS
     'smtp_host' => '', 'smtp_port' => '587', 'smtp_user' => '', 'smtp_pass' => '', 'smtp_encryption' => 'tls',
     'sms_provider' => '', 'sms_key' => '', 'sms_sender' => '',
+    'email_notifications_enabled' => '1', 'sms_notifications_enabled' => '0',
     // Application options
     'mode_toggle' => 'pay_after', 'application_fee' => '0', 'acceptance_fee' => '0', 'academic_session' => date('Y'),
     'voucher_required' => '0', 'documents_required' => '1'
@@ -242,6 +244,8 @@ try {
           <input class="input" name="smtp_pass" value="<?php echo htmlspecialchars($settings['smtp_pass']); ?>">
           <label class="form-label">Encryption</label>
           <select class="input" name="smtp_encryption"><option value="tls" <?php echo $settings['smtp_encryption']=='tls'?'selected':''; ?>>TLS</option><option value="ssl" <?php echo $settings['smtp_encryption']=='ssl'?'selected':''; ?>>SSL</option></select>
+          <label class="form-label">Enable Email Notifications</label>
+          <select class="input" name="email_notifications_enabled"><option value="1" <?php echo $settings['email_notifications_enabled']=='1'?'selected':''; ?>>Yes</option><option value="0" <?php echo $settings['email_notifications_enabled']=='0'?'selected':''; ?>>No</option></select>
         </div>
         <div>
           <h4 class="muted">SMS</h4>
@@ -251,6 +255,8 @@ try {
           <input class="input" name="sms_key" value="<?php echo htmlspecialchars($settings['sms_key']); ?>">
           <label class="form-label">Sender</label>
           <input class="input" name="sms_sender" value="<?php echo htmlspecialchars($settings['sms_sender']); ?>">
+          <label class="form-label">Enable SMS Notifications</label>
+          <select class="input" name="sms_notifications_enabled"><option value="1" <?php echo $settings['sms_notifications_enabled']=='1'?'selected':''; ?>>Yes</option><option value="0" <?php echo $settings['sms_notifications_enabled']=='0'?'selected':''; ?>>No</option></select>
         </div>
       </div>
     </div>
