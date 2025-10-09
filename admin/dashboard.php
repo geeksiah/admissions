@@ -75,6 +75,11 @@ try {
 $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
 
 $pageTitle = 'Admin Dashboard';
+
+// Determine current panel (server-side fallback if JS fails)
+$allPanels = ['overview','applications','students','programs','application_forms','users','payments','reports','notifications','communications','settings','vouchers','fee_structures','backup_recovery','audit_trail','profile'];
+$currentPanel = isset($_GET['panel']) && in_array($_GET['panel'], $allPanels, true) ? $_GET['panel'] : 'overview';
+
 include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="/assets/css/dashboard.css">
@@ -92,21 +97,21 @@ include __DIR__ . '/../includes/header.php';
       <?php endif; ?>
     </a>
     <div class="sidebar-title">Navigation</div>
-    <a href="?panel=overview" class="sidebar-item active" data-panel="overview"><i class="bi bi-speedometer2"></i> Overview</a>
-    <a href="?panel=applications" class="sidebar-item" data-panel="applications"><i class="bi bi-list-check"></i> Applications</a>
-    <a href="?panel=students" class="sidebar-item" data-panel="students"><i class="bi bi-people"></i> Students</a>
-    <a href="?panel=programs" class="sidebar-item" data-panel="programs"><i class="bi bi-mortarboard"></i> Programs</a>
-    <a href="?panel=application_forms" class="sidebar-item" data-panel="application_forms"><i class="bi bi-ui-checks"></i> Application Forms</a>
-    <a href="?panel=users" class="sidebar-item" data-panel="users"><i class="bi bi-person-gear"></i> Users</a>
-    <a href="?panel=payments" class="sidebar-item" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</a>
-    <a href="?panel=reports" class="sidebar-item" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</a>
-    <a href="?panel=notifications" class="sidebar-item" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
-    <a href="?panel=communications" class="sidebar-item" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</a>
-    <a href="?panel=vouchers" class="sidebar-item" data-panel="vouchers"><i class="bi bi-ticket"></i> Vouchers</a>
-    <a href="?panel=fee_structures" class="sidebar-item" data-panel="fee_structures"><i class="bi bi-currency-dollar"></i> Fee Structures</a>
-    <a href="?panel=backup_recovery" class="sidebar-item" data-panel="backup_recovery"><i class="bi bi-cloud-arrow-down"></i> Backup & Recovery</a>
-    <a href="?panel=audit_trail" class="sidebar-item" data-panel="audit_trail"><i class="bi bi-shield-check"></i> Audit Trail</a>
-    <a href="?panel=settings" class="sidebar-item" data-panel="settings"><i class="bi bi-gear"></i> Settings</a>
+    <a href="?panel=overview" class="sidebar-item <?php echo $currentPanel==='overview'?'active':''; ?>" data-panel="overview"><i class="bi bi-speedometer2"></i> Overview</a>
+    <a href="?panel=applications" class="sidebar-item <?php echo $currentPanel==='applications'?'active':''; ?>" data-panel="applications"><i class="bi bi-list-check"></i> Applications</a>
+    <a href="?panel=students" class="sidebar-item <?php echo $currentPanel==='students'?'active':''; ?>" data-panel="students"><i class="bi bi-people"></i> Students</a>
+    <a href="?panel=programs" class="sidebar-item <?php echo $currentPanel==='programs'?'active':''; ?>" data-panel="programs"><i class="bi bi-mortarboard"></i> Programs</a>
+    <a href="?panel=application_forms" class="sidebar-item <?php echo $currentPanel==='application_forms'?'active':''; ?>" data-panel="application_forms"><i class="bi bi-ui-checks"></i> Application Forms</a>
+    <a href="?panel=users" class="sidebar-item <?php echo $currentPanel==='users'?'active':''; ?>" data-panel="users"><i class="bi bi-person-gear"></i> Users</a>
+    <a href="?panel=payments" class="sidebar-item <?php echo $currentPanel==='payments'?'active':''; ?>" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</a>
+    <a href="?panel=reports" class="sidebar-item <?php echo $currentPanel==='reports'?'active':''; ?>" data-panel="reports"><i class="bi bi-graph-up"></i> Reports</a>
+    <a href="?panel=notifications" class="sidebar-item <?php echo $currentPanel==='notifications'?'active':''; ?>" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
+    <a href="?panel=communications" class="sidebar-item <?php echo $currentPanel==='communications'?'active':''; ?>" data-panel="communications"><i class="bi bi-chat-dots"></i> Communications</a>
+    <a href="?panel=vouchers" class="sidebar-item <?php echo $currentPanel==='vouchers'?'active':''; ?>" data-panel="vouchers"><i class="bi bi-ticket"></i> Vouchers</a>
+    <a href="?panel=fee_structures" class="sidebar-item <?php echo $currentPanel==='fee_structures'?'active':''; ?>" data-panel="fee_structures"><i class="bi bi-currency-dollar"></i> Fee Structures</a>
+    <a href="?panel=backup_recovery" class="sidebar-item <?php echo $currentPanel==='backup_recovery'?'active':''; ?>" data-panel="backup_recovery"><i class="bi bi-cloud-arrow-down"></i> Backup & Recovery</a>
+    <a href="?panel=audit_trail" class="sidebar-item <?php echo $currentPanel==='audit_trail'?'active':''; ?>" data-panel="audit_trail"><i class="bi bi-shield-check"></i> Audit Trail</a>
+    <a href="?panel=settings" class="sidebar-item <?php echo $currentPanel==='settings'?'active':''; ?>" data-panel="settings"><i class="bi bi-gear"></i> Settings</a>
   </aside>
 
   <main class="dashboard-content" id="panelHost">
@@ -127,7 +132,7 @@ include __DIR__ . '/../includes/header.php';
         $month = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())")->fetchColumn();
       } catch (Throwable $e) { /* show zeros */ }
     ?>
-    <div id="panel-overview">
+    <div id="panel-overview" class="<?php echo $currentPanel==='overview'?'':'hidden'; ?>" style="<?php echo $currentPanel==='overview'?'display:block':''; ?>">
       <div class="stat-grid">
         <div class="stat-card"><h4 class="stat-card-title">Total Applications</h4><div class="stat-card-value"><?php echo number_format($totalApps); ?></div></div>
         <div class="stat-card"><h4 class="stat-card-title">Pending Review</h4><div class="stat-card-value"><?php echo number_format($pendingApps); ?></div></div>
@@ -154,11 +159,12 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
 
-    <?php
+    <?php 
     $panels = ['applications', 'students', 'programs', 'application_forms', 'users', 'payments', 'reports', 'notifications', 'communications', 'settings', 'vouchers', 'fee_structures', 'backup_recovery', 'audit_trail', 'profile'];
     foreach ($panels as $panel) {
       $title = ucwords(str_replace('_', ' ', $panel));
-      echo "<div id='panel-{$panel}' class='hidden'>";
+      $isActive = ($currentPanel === $panel);
+      echo "<div id='panel-{$panel}' class='" . ($isActive ? "" : "hidden") . "' style='" . ($isActive ? "display:block" : "") . "'>";
       if (file_exists(__DIR__."/panels/{$panel}.php")) {
         include __DIR__."/panels/{$panel}.php";
       } else {
