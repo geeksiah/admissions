@@ -77,7 +77,7 @@ $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
 $pageTitle = 'Admin Dashboard';
 include __DIR__ . '/../includes/header.php';
 ?>
-<link rel="stylesheet" href="/../assets/css/dashboard.css">
+<link rel="stylesheet" href="/assets/css/dashboard.css">
 <style>
   :root { --brand: <?php echo htmlspecialchars($brandColor); ?>; }
 </style>
@@ -202,20 +202,15 @@ include __DIR__ . '/../includes/header.php';
       } catch(e) {}
     }
 
-    // Click handlers (direct + delegated for robustness)
-    navItems.forEach(item => {
-      item.addEventListener('click', function(e) {
-        e.preventDefault();
-        showPanel(this.dataset.panel);
-      });
-    });
+    // SPA-style sidebar navigation (prevent full reload and avoid hashes)
     if (sidebarEl) {
       sidebarEl.addEventListener('click', function(e){
         const link = e.target.closest('.sidebar-item');
-        if (link && link.dataset.panel) {
-          e.preventDefault();
-          showPanel(link.dataset.panel);
-        }
+        if (!link) return;
+        const panel = link.dataset.panel;
+        if (!panel) return;
+        e.preventDefault();
+        showPanel(panel);
       });
     }
 
