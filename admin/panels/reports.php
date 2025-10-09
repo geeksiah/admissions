@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
                 a.status as application_status,
                 DATE(a.created_at) as application_date,
                 py.amount as payment_amount,
-                py.payment_method,
+                COALESCE(py.payment_method, py.method) as payment_method,
                 py.status as payment_status
               FROM applications a
               LEFT JOIN students s ON a.student_id = s.id

@@ -39,10 +39,27 @@ try {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      application_id INT UNSIGNED, amount DECIMAL(10,2) DEFAULT 0,
-      status VARCHAR(30) DEFAULT 'pending', method VARCHAR(50) DEFAULT '',
+      application_id INT UNSIGNED,
+      student_id INT UNSIGNED,
+      amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      currency VARCHAR(3) DEFAULT 'GHS',
+      payment_method VARCHAR(50),
+      gateway VARCHAR(50),
+      transaction_id VARCHAR(100),
+      reference VARCHAR(100),
+      receipt_number VARCHAR(50),
+      status VARCHAR(30) DEFAULT 'pending',
+      payment_date TIMESTAMP NULL,
+      verified_at TIMESTAMP NULL,
+      verified_by INT UNSIGNED,
+      notes TEXT,
+      proof_of_payment VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_pstatus(status)
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_status(status),
+      INDEX idx_application(application_id),
+      INDEX idx_student(student_id),
+      INDEX idx_receipt(receipt_number)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   $pdo->exec("CREATE TABLE IF NOT EXISTS vouchers (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

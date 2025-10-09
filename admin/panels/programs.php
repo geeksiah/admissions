@@ -6,6 +6,7 @@ try { $pdo->exec("CREATE TABLE IF NOT EXISTS programs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
   status VARCHAR(30) DEFAULT 'active',
+  prospectus_path VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_status(status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"); } catch (Throwable $e) {}
@@ -32,6 +33,23 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       $st=$pdo->prepare("UPDATE programs SET status=? WHERE id=?");
       $st->execute([$status,$id]);
       $msg='Status changed'; $type='success';
+    } elseif ($action==='upload_prospectus') {
+      $id=(int)($_POST['id']??0);
+      if(!$id) throw new RuntimeException('Program ID required');
+      if (empty($_FILES['prospectus']['name']) || !is_uploaded_file($_FILES['prospectus']['tmp_name'])) {
+        throw new RuntimeException('Select a PDF');
+      }
+      $ext = strtolower(pathinfo($_FILES['prospectus']['name'], PATHINFO_EXTENSION));
+      if ($ext!=='pdf') throw new RuntimeException('Prospectus must be PDF');
+      $dir = $_SERVER['DOCUMENT_ROOT'].'/uploads/prospectus';
+      if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+      $fname = 'program_'.$id.'_'.time().'.pdf';
+      $dest = $dir.'/'.$fname;
+      move_uploaded_file($_FILES['prospectus']['tmp_name'], $dest);
+      $rel = '/uploads/prospectus/'.$fname;
+      $st=$pdo->prepare("UPDATE programs SET prospectus_path=? WHERE id=?");
+      $st->execute([$rel,$id]);
+      $msg='Prospectus uploaded'; $type='success';
     }
   } catch (Throwable $e) { $msg='Failed: '.$e->getMessage(); $type='danger'; }
 }
@@ -97,6 +115,16 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM programs $whereSql ORDER BY crea
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
               <button class="btn secondary" type="submit"><i class="bi bi-toggle2-<?php echo $r['status']==='active'?'on':'off'; ?>"></i> <?php echo $r['status']==='active'?'Deactivate':'Activate'; ?></button>
             </form>
+            <form method="post" action="?panel=programs" enctype="multipart/form-data" onsubmit="return confirm('Upload prospectus PDF?')">
+              <input type="hidden" name="action" value="upload_prospectus">
+              <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+              <input class="input" type="file" name="prospectus" accept="application/pdf" style="max-width:220px">
+              <button class="btn secondary" type="submit"><i class="bi bi-file-earmark-pdf"></i> Upload PDF</button>
+            </form>
+            <?php if (!empty($r['prospectus_path'])): ?>
+              <a class="btn secondary" href="<?php echo htmlspecialchars($r['prospectus_path']); ?>" target="_blank"><i class="bi bi-eye"></i> View</a>
+            <?php endif; ?>
           </td>
         </tr>
         <?php endforeach; endif; ?>
