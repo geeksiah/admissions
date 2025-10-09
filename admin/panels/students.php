@@ -9,16 +9,36 @@ try { $pdo->exec("CREATE TABLE IF NOT EXISTS students (
   INDEX idx_email(email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"); } catch (Throwable $e) {}
 
-if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='add_student'){
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action'])){
   try{
-    $fn=trim($_POST['first_name']??'');
-    $ln=trim($_POST['last_name']??'');
-    $em=trim($_POST['email']??'');
-    $ph=trim($_POST['phone']??'');
-    if($fn===''){ throw new RuntimeException('First name required'); }
-    $stmt=$pdo->prepare("INSERT INTO students(first_name,last_name,email,phone) VALUES(?,?,?,?)");
-    $stmt->execute([$fn,$ln,$em,$ph]);
-    $message='Student added successfully';$messageType='success';
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { throw new RuntimeException('Invalid request'); }
+    $action = $_POST['action'];
+    if($action==='add_student'){
+      $fn=trim($_POST['first_name']??'');
+      $ln=trim($_POST['last_name']??'');
+      $em=trim($_POST['email']??'');
+      $ph=trim($_POST['phone']??'');
+      if($fn===''){ throw new RuntimeException('First name required'); }
+      $stmt=$pdo->prepare("INSERT INTO students(first_name,last_name,email,phone) VALUES(?,?,?,?)");
+      $stmt->execute([$fn,$ln,$em,$ph]);
+      $message='Student added successfully';$messageType='success';
+    } elseif ($action==='update_student') {
+      $id=(int)($_POST['id']??0);
+      $fn=trim($_POST['first_name']??'');
+      $ln=trim($_POST['last_name']??'');
+      $em=trim($_POST['email']??'');
+      $ph=trim($_POST['phone']??'');
+      if(!$id || $fn===''){ throw new RuntimeException('Valid ID and first name required'); }
+      $stmt=$pdo->prepare("UPDATE students SET first_name=?, last_name=?, email=?, phone=? WHERE id=?");
+      $stmt->execute([$fn,$ln,$em,$ph,$id]);
+      $message='Student updated';$messageType='success';
+    } elseif ($action==='delete_student') {
+      $id=(int)($_POST['id']??0);
+      if(!$id){ throw new RuntimeException('ID required'); }
+      $stmt=$pdo->prepare("DELETE FROM students WHERE id=?");
+      $stmt->execute([$id]);
+      $message='Student deleted';$messageType='success';
+    }
   }catch(Throwable $e){ $message='Failed: '.$e->getMessage();$messageType='danger'; }
 }
 
@@ -54,12 +74,29 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM students $where ORDER BY created
         <?php if(!$rows): ?>
           <tr><td colspan="4" style="padding:14px" class="muted">No students found.</td></tr>
         <?php else: foreach($rows as $r): ?>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:10px"><?php echo htmlspecialchars(($r['first_name']??'').' '.($r['last_name']??'')); ?></td>
-            <td style="padding:10px"><?php echo htmlspecialchars($r['email']??''); ?></td>
-            <td style="padding:10px"><?php echo htmlspecialchars($r['phone']??''); ?></td>
-            <td style="padding:10px"><?php echo htmlspecialchars(date('Y-m-d', strtotime($r['created_at']))); ?></td>
-          </tr>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px">
+            <form method="post" action="?panel=students" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
+              <input type="hidden" name="action" value="update_student">
+              <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+              <input class="input" name="first_name" value="<?php echo htmlspecialchars($r['first_name']??''); ?>" placeholder="First name">
+              <input class="input" name="last_name" value="<?php echo htmlspecialchars($r['last_name']??''); ?>" placeholder="Last name">
+              <input class="input" name="email" value="<?php echo htmlspecialchars($r['email']??''); ?>" placeholder="Email">
+              <input class="input" name="phone" value="<?php echo htmlspecialchars($r['phone']??''); ?>" placeholder="Phone">
+              <div style="display:flex;gap:6px">
+                <button class="btn secondary" type="submit"><i class="bi bi-save"></i> Save</button>
+                <form method="post" action="?panel=students" onsubmit="return confirm('Delete this student?')">
+                  <input type="hidden" name="action" value="delete_student">
+                  <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                  <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+                  <button class="btn secondary" type="submit" style="color:#ef4444"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </form>
+          </td>
+          <td style="padding:10px"><?php echo htmlspecialchars(date('Y-m-d', strtotime($r['created_at']))); ?></td>
+        </tr>
         <?php endforeach; endif; ?>
       </tbody>
     </table>
@@ -78,6 +115,7 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM students $where ORDER BY created
   <h3>Add Student</h3>
   <form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <input type="hidden" name="action" value="add_student">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
     <div><label class="form-label">First Name</label><input class="input" name="first_name" required></div>
     <div><label class="form-label">Last Name</label><input class="input" name="last_name"></div>
     <div><label class="form-label">Email</label><input class="input" name="email"></div>

@@ -30,6 +30,12 @@ RewriteRule ^admin/dashboard/?$ admin/dashboard.php [L,QSA]
 RewriteRule ^unauthorized/?$ unauthorized.php [L,QSA]
 RewriteRule ^install/?$ install/index.php [L,QSA]
 
+# Student routes
+RewriteRule ^student/login/?$ student/login.php [L,QSA]
+RewriteRule ^student/signup/?$ student/signup.php [L,QSA]
+RewriteRule ^student/dashboard/?$ student/dashboard.php [L,QSA]
+RewriteRule ^student/verify/?$ student/verify.php [L,QSA]
+
 # Default: let PHP files resolve normally
 
 # PHP Runtime tuning (optional)

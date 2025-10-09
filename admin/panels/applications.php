@@ -1,6 +1,30 @@
 <?php
-// Applications panel - list with filters and pagination
+// Applications panel - list with filters, pagination, and status management
 // Requires $pdo available from dashboard
+
+// Handle actions (approve/reject/delete)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  try {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { throw new RuntimeException('Invalid request'); }
+    $action = $_POST['action'] ?? '';
+    if ($action === 'update_status') {
+      $id = (int)($_POST['id'] ?? 0);
+      $status = $_POST['status'] ?? 'pending';
+      if (!$id || !in_array($status, ['pending','under_review','approved','rejected','waitlisted'], true)) {
+        throw new RuntimeException('Invalid status update');
+      }
+      $stmt = $pdo->prepare("UPDATE applications SET status=? WHERE id=?");
+      $stmt->execute([$status, $id]);
+    } elseif ($action === 'delete_application') {
+      $id = (int)($_POST['id'] ?? 0);
+      if (!$id) { throw new RuntimeException('Invalid application'); }
+      $stmt = $pdo->prepare("DELETE FROM applications WHERE id=?");
+      $stmt->execute([$id]);
+    }
+  } catch (Throwable $e) {
+    echo '<div class="card" style="border-left:4px solid #ef4444;margin-bottom:12px">'.htmlspecialchars($e->getMessage()).'</div>';
+  }
+}
 
 $perPage = 10;
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -60,6 +84,7 @@ try {
           <th style="padding:10px">Program</th>
           <th style="padding:10px">Status</th>
           <th style="padding:10px">Date</th>
+          <th style="padding:10px">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -70,8 +95,28 @@ try {
             <td style="padding:10px">#<?php echo (int)$r['id']; ?></td>
             <td style="padding:10px"><?php echo htmlspecialchars(trim(($r['first_name']??'').' '.($r['last_name']??''))); ?></td>
             <td style="padding:10px"><?php echo htmlspecialchars($r['program'] ?? ''); ?></td>
-            <td style="padding:10px"><span class="muted"><?php echo ucwords(str_replace('_',' ', $r['status'])); ?></span></td>
+            <td style="padding:10px">
+              <form method="post" action="?panel=applications" style="display:flex;gap:6px;align-items:center">
+                <input type="hidden" name="action" value="update_status">
+                <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+                <select class="input" name="status" style="max-width:160px">
+                  <?php foreach (["pending","under_review","approved","rejected","waitlisted"] as $opt): ?>
+                    <option value="<?php echo $opt; ?>" <?php echo $r['status']===$opt?'selected':''; ?>><?php echo ucwords(str_replace('_',' ',$opt)); ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <button class="btn secondary" type="submit"><i class="bi bi-save"></i></button>
+              </form>
+            </td>
             <td style="padding:10px"><?php echo htmlspecialchars(date('Y-m-d', strtotime($r['created_at']))); ?></td>
+            <td style="padding:10px">
+              <form method="post" action="?panel=applications" onsubmit="return confirm('Delete this application?')">
+                <input type="hidden" name="action" value="delete_application">
+                <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+                <button class="btn secondary" type="submit" style="color:#ef4444"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
           </tr>
         <?php endforeach; endif; ?>
       </tbody>
