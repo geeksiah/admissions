@@ -83,7 +83,7 @@ $programs = [];$apps=[];$documents=[];$payments=[];$notes=[];
 if ($error==='') {
   try {
     $programs = $pdo->query("SELECT id,name FROM programs WHERE status='active' ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
-    $st = $pdo->prepare("SELECT a.id,a.status,a.created_at,p.name AS program FROM applications a JOIN programs p ON p.id=a.program_id WHERE a.student_id=? ORDER BY a.created_at DESC");
+    $st = $pdo->prepare("SELECT a.id,a.status,a.created_at,p.name AS program,p.id AS program_id,p.prospectus_path FROM applications a JOIN programs p ON p.id=a.program_id WHERE a.student_id=? ORDER BY a.created_at DESC");
     $st->execute([$studentId]);
     $apps = $st->fetchAll(PDO::FETCH_ASSOC);
     $st = $pdo->prepare('SELECT * FROM student_documents WHERE student_id=? ORDER BY created_at DESC');
@@ -126,6 +126,7 @@ include __DIR__ . '/../includes/header.php';
             <th style="padding:10px">Program</th>
             <th style="padding:10px">Status</th>
             <th style="padding:10px">Date</th>
+            <th style="padding:10px">Prospectus</th>
           </tr>
         </thead>
         <tbody>
@@ -137,6 +138,15 @@ include __DIR__ . '/../includes/header.php';
               <td style="padding:10px"><?php echo htmlspecialchars($r['program']); ?></td>
               <td style="padding:10px"><span class="muted"><?php echo ucwords(str_replace('_',' ', $r['status'])); ?></span></td>
               <td style="padding:10px"><?php echo htmlspecialchars(date('Y-m-d', strtotime($r['created_at']))); ?></td>
+              <td style="padding:10px">
+                <?php if(($r['status'] ?? '')==='approved' && !empty($r['prospectus_path'])): ?>
+                  <a class="btn secondary" href="/api/prospectus.php?program_id=<?php echo (int)$r['program_id']; ?>&application_id=<?php echo (int)$r['id']; ?>">
+                    <i class="bi bi-file-earmark-pdf"></i> Download
+                  </a>
+                <?php else: ?>
+                  <span class="muted">N/A</span>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php endforeach; endif; ?>
         </tbody>
