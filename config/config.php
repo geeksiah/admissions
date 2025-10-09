@@ -20,9 +20,22 @@ if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
 // Sessions
 define('SESSION_NAME', 'ADMISSIONS_SESSION');
 ini_set('session.name', SESSION_NAME);
-ini_set('session.cookie_httponly', '1');
 ini_set('session.use_strict_mode', '1');
-if (session_status() === PHP_SESSION_NONE) session_start();
+ini_set('session.use_only_cookies', '1');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
+if (PHP_SESSION_NONE === session_status()) {
+    if (function_exists('session_set_cookie_params')) {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+    session_start();
+}
 
 // Errors
 if (APP_DEBUG) {
