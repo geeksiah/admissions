@@ -19,11 +19,17 @@ if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
 
 // Sessions
 define('SESSION_NAME', 'ADMISSIONS_SESSION');
-ini_set('session.name', SESSION_NAME);
 ini_set('session.use_strict_mode', '1');
 ini_set('session.use_only_cookies', '1');
+// Ensure a writable session save path (Hostinger safe)
+$sessionPath = __DIR__ . '/../logs/sessions';
+if (!is_dir($sessionPath)) { @mkdir($sessionPath, 0775, true); }
+if (is_dir($sessionPath) && is_writable($sessionPath)) {
+    ini_set('session.save_path', $sessionPath);
+}
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
 if (PHP_SESSION_NONE === session_status()) {
+    session_name(SESSION_NAME);
     if (function_exists('session_set_cookie_params')) {
         session_set_cookie_params([
             'lifetime' => 0,
