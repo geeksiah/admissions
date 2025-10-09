@@ -52,9 +52,60 @@ if ($error==='' && $_SERVER['REQUEST_METHOD']==='POST') {
     if ($action==='create_application') {
       $programId = (int)($_POST['program_id'] ?? 0);
       if (!$programId) throw new RuntimeException('Select a program');
+      // Enforce mode: if voucher required, block direct creation and prompt
+      $settings = [];
+      try {
+        $st = $pdo->query("SELECT config_key, config_value FROM system_config");
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) { $settings[$row['config_key']] = $row['config_value']; }
+      } catch (Throwable $e) {}
+      $mode = $settings['mode_toggle'] ?? 'pay_after';
+      if ($mode === 'voucher' || ($settings['voucher_required'] ?? '0') === '1') {
+        throw new RuntimeException('A voucher is required before starting an application.');
+      }
       $stmt = $pdo->prepare('INSERT INTO applications(student_id, program_id, status) VALUES(?,?,"pending")');
       $stmt->execute([$studentId, $programId]);
       $message = 'Application created.';
+      $currentPanel = 'applications';
+    } elseif ($action==='redeem_voucher') {
+      // Validate voucher, mark used, create application
+      $serial = trim($_POST['voucher_serial'] ?? '');
+      $pin = trim($_POST['voucher_pin'] ?? '');
+      $programId = (int)($_POST['program_id'] ?? 0);
+      if ($serial==='' || $pin==='' || !$programId) { throw new RuntimeException('Provide voucher serial, PIN and program'); }
+      // Ensure vouchers table exists
+      try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS vouchers (
+          id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          batch_id INT UNSIGNED,
+          serial_number VARCHAR(50) UNIQUE NOT NULL,
+          pin_code VARCHAR(20) NOT NULL,
+          value DECIMAL(10,2) DEFAULT 0,
+          currency VARCHAR(3) DEFAULT 'GHS',
+          status ENUM('active', 'used', 'expired', 'cancelled') DEFAULT 'active',
+          used_by INT UNSIGNED,
+          used_at TIMESTAMP NULL,
+          application_id INT UNSIGNED,
+          expiry_date DATE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+      } catch (Throwable $e) {}
+      // Look up active voucher
+      $st=$pdo->prepare('SELECT * FROM vouchers WHERE serial_number=? AND pin_code=? LIMIT 1');
+      $st->execute([$serial, $pin]);
+      $voucher = $st->fetch(PDO::FETCH_ASSOC);
+      if (!$voucher) { throw new RuntimeException('Invalid voucher details'); }
+      if ($voucher['status']!=='active') { throw new RuntimeException('Voucher not active'); }
+      if (!empty($voucher['expiry_date']) && strtotime($voucher['expiry_date']) < strtotime(date('Y-m-d'))) {
+        throw new RuntimeException('Voucher expired');
+      }
+      // Create application
+      $stmt = $pdo->prepare('INSERT INTO applications(student_id, program_id, status) VALUES(?,?,"pending")');
+      $stmt->execute([$studentId, $programId]);
+      $appId = (int)$pdo->lastInsertId();
+      // Mark voucher used
+      $st=$pdo->prepare('UPDATE vouchers SET status="used", used_by=?, used_at=NOW(), application_id=? WHERE id=?');
+      $st->execute([$studentId, $appId, $voucher['id']]);
+      $message = 'Voucher redeemed. Application created.';
       $currentPanel = 'applications';
     } elseif ($action==='upload_document') {
       $docType = sanitizeInput($_POST['doc_type'] ?? 'document');
@@ -82,6 +133,13 @@ if ($error==='' && $_SERVER['REQUEST_METHOD']==='POST') {
 $programs = [];$apps=[];$documents=[];$payments=[];$notes=[];
 if ($error==='') {
   try {
+    // Load system settings for gating (voucher mode, etc.)
+    $systemSettings = [];
+    try {
+      $st = $pdo->query("SELECT config_key, config_value FROM system_config");
+      foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) { $systemSettings[$row['config_key']] = $row['config_value']; }
+    } catch (Throwable $e) { /* ignore */ }
+
     $programs = $pdo->query("SELECT id,name FROM programs WHERE status='active' ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
     $st = $pdo->prepare("SELECT a.id,a.status,a.created_at,p.name AS program,p.id AS program_id,p.prospectus_path FROM applications a JOIN programs p ON p.id=a.program_id WHERE a.student_id=? ORDER BY a.created_at DESC");
     $st->execute([$studentId]);
@@ -156,6 +214,11 @@ include __DIR__ . '/../includes/header.php';
 
   <div class="panel-card">
     <h3>Start a New Application</h3>
+    <?php
+      $modeEffective = ($systemSettings['mode_toggle'] ?? 'pay_after');
+      $voucherMode = ($modeEffective === 'voucher') || (($systemSettings['voucher_required'] ?? '0') === '1');
+    ?>
+    <?php if (!$voucherMode): ?>
     <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
       <input type="hidden" name="action" value="create_application">
       <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
@@ -170,6 +233,31 @@ include __DIR__ . '/../includes/header.php';
       </div>
       <button class="btn" type="submit"><i class="bi bi-plus-lg"></i> Create</button>
     </form>
+    <?php else: ?>
+    <div class="muted" style="margin-bottom:8px">A valid voucher is required to start an application.</div>
+    <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <input type="hidden" name="action" value="redeem_voucher">
+      <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+      <div style="min-width:220px">
+        <label class="form-label">Voucher Serial</label>
+        <input class="input" name="voucher_serial" placeholder="e.g., VCH-AB12CD34" required>
+      </div>
+      <div style="min-width:140px">
+        <label class="form-label">PIN</label>
+        <input class="input" name="voucher_pin" placeholder="1234" minlength="4" maxlength="10" required>
+      </div>
+      <div style="min-width:220px">
+        <label class="form-label">Program</label>
+        <select class="input" name="program_id" required>
+          <option value="">Select program</option>
+          <?php foreach ($programs as $p): ?>
+            <option value="<?php echo (int)$p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <button class="btn" type="submit"><i class="bi bi-ticket"></i> Redeem & Create</button>
+    </form>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
 

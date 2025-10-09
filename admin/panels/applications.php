@@ -2,6 +2,20 @@
 // Applications panel - list with filters, pagination, and status management
 // Requires $pdo available from dashboard
 
+// Ensure status history table exists
+try {
+  $pdo->exec("CREATE TABLE IF NOT EXISTS application_status_history (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    application_id INT UNSIGNED NOT NULL,
+    old_status VARCHAR(30),
+    new_status VARCHAR(30) NOT NULL,
+    changed_by INT UNSIGNED NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_app(application_id),
+    INDEX idx_changed(changed_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Throwable $e) { /* ignore */ }
+
 // Handle actions (approve/reject/delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
@@ -13,11 +27,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!$id || !in_array($status, ['pending','under_review','approved','rejected','waitlisted'], true)) {
         throw new RuntimeException('Invalid status update');
       }
+      // Read old status
+      $old = null;
+      try {
+        $st = $pdo->prepare('SELECT status FROM applications WHERE id=?');
+        $st->execute([$id]);
+        $old = $st->fetchColumn();
+      } catch (Throwable $e) {}
+
       $stmt = $pdo->prepare("UPDATE applications SET status=? WHERE id=?");
       $stmt->execute([$status, $id]);
+
+      // Write history
+      try {
+        $st = $pdo->prepare('INSERT INTO application_status_history(application_id, old_status, new_status, changed_by) VALUES(?,?,?,?)');
+        $st->execute([$id, $old, $status, ($_SESSION['user_id'] ?? null)]);
+      } catch (Throwable $e) {}
     } elseif ($action === 'delete_application') {
       $id = (int)($_POST['id'] ?? 0);
       if (!$id) { throw new RuntimeException('Invalid application'); }
+      // Log deletion as terminal history entry
+      try {
+        $st = $pdo->prepare('INSERT INTO application_status_history(application_id, old_status, new_status, changed_by) VALUES(?,?,?,?)');
+        // Fetch last known status
+        $last = null; $st2 = $pdo->prepare('SELECT status FROM applications WHERE id=?'); $st2->execute([$id]); $last = $st2->fetchColumn();
+        $st->execute([$id, $last, 'deleted', ($_SESSION['user_id'] ?? null)]);
+      } catch (Throwable $e) {}
       $stmt = $pdo->prepare("DELETE FROM applications WHERE id=?");
       $stmt->execute([$id]);
     }
@@ -109,7 +144,8 @@ try {
               </form>
             </td>
             <td style="padding:10px"><?php echo htmlspecialchars(date('Y-m-d', strtotime($r['created_at']))); ?></td>
-            <td style="padding:10px">
+            <td style="padding:10px;display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn secondary" type="button" onclick="viewHistory(<?php echo (int)$r['id']; ?>)"><i class="bi bi-clock-history"></i> History</button>
               <form method="post" action="?panel=applications" onsubmit="return confirm('Delete this application?')">
                 <input type="hidden" name="action" value="delete_application">
                 <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
@@ -133,3 +169,42 @@ try {
 </div>
 
 
+
+<div id="historyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:16px;padding:24px;min-width:500px;max-width:90vw;max-height:90vh;overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3>Application History</h3>
+      <button onclick="closeHistoryModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+    </div>
+    <div id="historyBody" class="muted">Loading...</div>
+  </div>
+  <script>
+    async function viewHistory(appId) {
+      const modal = document.getElementById('historyModal');
+      const body = document.getElementById('historyBody');
+      body.innerHTML = 'Loading...';
+      modal.style.display = 'block';
+      try {
+        const res = await fetch(`/api/application_history.php?application_id=${appId}`, { credentials: 'same-origin' });
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error || 'Failed');
+        if (!json.data || json.data.length === 0) {
+          body.innerHTML = '<div class="muted">No history yet.</div>';
+          return;
+        }
+        const rows = json.data.map(h => {
+          const by = (h.username || h.email || 'System');
+          return `<div style="padding:10px;border-bottom:1px solid var(--border)">
+            <div><strong>${(h.old_status||'—')} → ${h.new_status}</strong></div>
+            <div class="muted" style="font-size:12px">${new Date(h.changed_at).toLocaleString()} • by ${by}</div>
+          </div>`;
+        }).join('');
+        body.innerHTML = rows;
+      } catch (e) {
+        body.innerHTML = '<div style="color:#ef4444">Failed to load history.</div>';
+      }
+    }
+    function closeHistoryModal(){ document.getElementById('historyModal').style.display='none'; }
+    document.addEventListener('click', function(e){ if(e.target.id==='historyModal'){ closeHistoryModal(); } });
+  </script>
+</div>
