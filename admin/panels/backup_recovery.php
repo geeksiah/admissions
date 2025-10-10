@@ -222,6 +222,7 @@ try {
   $systemInfo['mysql_version'] = 'Unknown';
 }
 
+if (!function_exists('formatBytes')) {
 function formatBytes($bytes, $precision = 2) {
   $units = array('B', 'KB', 'MB', 'GB', 'TB');
   
@@ -230,6 +231,7 @@ function formatBytes($bytes, $precision = 2) {
   }
   
   return round($bytes, $precision) . ' ' . $units[$i];
+}
 }
 ?>
 
