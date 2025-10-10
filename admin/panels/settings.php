@@ -18,6 +18,30 @@ $messageType = '';
 @mkdir($_SERVER['DOCUMENT_ROOT'] . '/uploads/avatars', 0775, true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Determine if this POST is intended for Settings panel to avoid cross-panel toasts
+    $allowedActions = ['add_gateway','update_gateway','toggle_gateway','delete_gateway','add_sms_gateway','update_sms_gateway','toggle_sms_gateway','delete_sms_gateway'];
+    $whitelist = [
+        'brand_color','institution_name','institution_email','institution_phone','timezone','currency',
+        // Payments
+        'paystack_enabled','paystack_public_key','paystack_secret_key','paystack_mode',
+        'flutter_enabled','flutter_public_key','flutter_secret_key','flutter_mode',
+        'stripe_enabled','stripe_public_key','stripe_secret_key','stripe_mode',
+        // Email/SMS
+        'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_encryption',
+        'sms_provider','sms_key','sms_sender',
+        'email_notifications_enabled','sms_notifications_enabled',
+        // Application options
+        'mode_toggle','application_fee','acceptance_fee','academic_session','voucher_required',
+        'documents_required'
+    ];
+    $isSettingsPost = (
+        (isset($_POST['panel']) && $_POST['panel'] === 'settings') ||
+        in_array($_POST['action'] ?? '', $allowedActions, true) ||
+        (count(array_intersect(array_keys($_POST), $whitelist)) > 0) ||
+        (!empty($_FILES['logo']['name']) || !empty($_FILES['avatar']['name']))
+    );
+
+    if ($isSettingsPost) {
     try {
         // CSRF optional if using generateCSRFToken
         if (function_exists('validateCSRFToken')) {
@@ -118,21 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'SMS gateway deleted'; $messageType = 'success';
         }
 
-        // Persist scalar settings (whitelist)
-        $whitelist = [
-            'brand_color','institution_name','institution_email','institution_phone','timezone','currency',
-            // Payments
-            'paystack_enabled','paystack_public_key','paystack_secret_key','paystack_mode',
-            'flutter_enabled','flutter_public_key','flutter_secret_key','flutter_mode',
-            'stripe_enabled','stripe_public_key','stripe_secret_key','stripe_mode',
-            // Email/SMS
-            'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_encryption',
-            'sms_provider','sms_key','sms_sender',
-            'email_notifications_enabled','sms_notifications_enabled',
-            // Application options
-            'mode_toggle','application_fee','acceptance_fee','academic_session','voucher_required',
-            'documents_required'
-        ];
+        // Persist scalar settings (whitelist defined above)
         foreach ($whitelist as $key) {
             if (isset($_POST[$key])) {
                 upsert_setting($pdo, $key, trim((string)$_POST[$key]));
@@ -168,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Throwable $e) {
         $message = 'Save failed: ' . $e->getMessage();
         $messageType = 'danger';
+    }
     }
 }
 

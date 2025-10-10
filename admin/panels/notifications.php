@@ -12,7 +12,8 @@ try {
     variables JSON,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_name_type (name, type)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   
   $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
@@ -203,17 +204,25 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       $stmt = $pdo->prepare("DELETE FROM notification_templates WHERE id=?");
       $stmt->execute([$id]);
       $msg='Template deleted'; $type='success';
-    } elseif ($action==='dedupe_templates') {
-      // Keep the most recent (highest id) per (name,type), delete others
-      $dups = $pdo->query("SELECT name, type, MAX(id) AS keep_id, COUNT(*) AS cnt FROM notification_templates GROUP BY name, type HAVING cnt>1")->fetchAll(PDO::FETCH_ASSOC);
-      $removed = 0;
-      foreach ($dups as $d) {
-        $del = $pdo->prepare("DELETE FROM notification_templates WHERE name=? AND type=? AND id<>?");
-        $del->execute([$d['name'], $d['type'], $d['keep_id']]);
-        $removed += $del->rowCount();
+    } elseif ($action==='duplicate_template') {
+      $id = (int)($_POST['id'] ?? 0);
+      if (!$id) { throw new RuntimeException('Template ID required'); }
+      $st = $pdo->prepare("SELECT * FROM notification_templates WHERE id=?");
+      $st->execute([$id]);
+      $tpl = $st->fetch(PDO::FETCH_ASSOC);
+      if (!$tpl) { throw new RuntimeException('Template not found'); }
+      // Create a non-conflicting name
+      $base = $tpl['name'] . ' (Copy)';
+      $name = $base; $i = 2;
+      while (true) {
+        $chk = $pdo->prepare("SELECT COUNT(*) FROM notification_templates WHERE name=? AND type=?");
+        $chk->execute([$name, $tpl['type']]);
+        if ((int)$chk->fetchColumn() === 0) break;
+        $name = $base . ' ' . $i++;
       }
-      $msg = $removed ? ("Deduplicated templates. Removed ".$removed." duplicates.") : 'No duplicates found';
-      $type='success';
+      $ins = $pdo->prepare("INSERT INTO notification_templates (name, type, subject, body, variables, is_active) VALUES (?,?,?,?,?,1)");
+      $ins->execute([$name, $tpl['type'], $tpl['subject'], $tpl['body'], $tpl['variables']]);
+      $msg='Template duplicated. You can now edit it.'; $type='success';
     }
   } catch (Throwable $e) { 
     $msg='Failed: '.$e->getMessage(); 
@@ -416,11 +425,7 @@ $stats = [
 <div class="panel-card">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
     <h3>Message Templates</h3>
-    <form method="post" action="?panel=notifications">
-      <input type="hidden" name="action" value="dedupe_templates">
-      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
-      <button class="btn secondary" type="submit"><i class="bi bi-magic"></i> Deduplicate</button>
-    </form>
+    <div class="muted" style="font-size:12px">Unique by name + type; duplicates are prevented.</div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
     <?php foreach($templates as $template): ?>
@@ -455,7 +460,13 @@ $stats = [
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
             <button class="btn secondary" type="submit"><i class="bi bi-toggle2-<?php echo $template['is_active']?'on':'off'; ?>"></i> <?php echo $template['is_active']?'Deactivate':'Activate'; ?></button>
           </form>
-          <button class="btn secondary" type="button" onclick="editTemplate(<?php echo (int)$template['id']; ?>)"><i class="bi bi-pencil"></i> Edit</button>
+          <button class="btn secondary" type="button" onclick="toggleEditTemplate(<?php echo (int)$template['id']; ?>)"><i class="bi bi-pencil"></i> Edit</button>
+          <form method="post" action="?panel=notifications" style="display:inline">
+            <input type="hidden" name="action" value="duplicate_template">
+            <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+            <button class="btn secondary" type="submit"><i class="bi bi-files"></i> Duplicate</button>
+          </form>
           <form method="post" action="?panel=notifications" style="display:inline" data-confirm="Delete this template?">
             <input type="hidden" name="action" value="delete_template">
             <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
@@ -522,6 +533,12 @@ $stats = [
 </div>
 
 <script>
+function toggleEditTemplate(id){
+  var form = document.getElementById('templateEditForm-' + id);
+  if (!form) return;
+  form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'grid' : 'none';
+}
+
 function loadTemplate() {
   const select = document.getElementById('templateSelect');
   const templateId = select.value;
