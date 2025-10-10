@@ -484,15 +484,16 @@ function renderFormFields() {
 }
 
 function renderField(field, sectionIndex, fieldIndex) {
+  // Render non-required dummy inputs in builder to avoid blocking admin submission
   const fieldHtml = {
-    text: `<input type="text" class="input" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`,
-    email: `<input type="email" class="input" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`,
-    phone: `<input type="tel" class="input" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`,
-    number: `<input type="number" class="input" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`,
-    date: `<input type="date" class="input" ${field.required ? 'required' : ''}>`,
-    select: `<select class="input" ${field.required ? 'required' : ''}><option>Select option...</option></select>`,
-    textarea: `<textarea class="input" rows="3" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}></textarea>`,
-    file: `<input type="file" class="input" ${field.required ? 'required' : ''}>`,
+    text: `<input type="text" class="input" placeholder="${field.placeholder || ''}">`,
+    email: `<input type="email" class="input" placeholder="${field.placeholder || ''}">`,
+    phone: `<input type="tel" class="input" placeholder="${field.placeholder || ''}">`,
+    number: `<input type="number" class="input" placeholder="${field.placeholder || ''}">`,
+    date: `<input type="date" class="input">`,
+    select: `<select class="input"><option>Select option...</option></select>`,
+    textarea: `<textarea class="input" rows="3" placeholder="${field.placeholder || ''}"></textarea>`,
+    file: `<input type="file" class="input">`,
     checkbox: `<label><input type="checkbox"> Checkbox option</label>`,
     radio: `<label><input type="radio" name="radio_${field.id}"> Radio option</label>`,
     section: `<div style="font-weight:500;padding:8px 0;border-bottom:1px solid var(--border)">Section Header</div>`
@@ -517,10 +518,21 @@ function renderField(field, sectionIndex, fieldIndex) {
           </button>
         </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:center;font-size:12px">
+      <div style="display:flex;gap:12px;align-items:center;font-size:12px;flex-wrap:wrap">
         <label><input type="checkbox" ${field.required ? 'checked' : ''} onchange="updateFieldProperty(${sectionIndex}, ${fieldIndex}, 'required', this.checked)"> Required</label>
-        <input type="text" class="input" placeholder="Placeholder text" value="${field.placeholder || ''}" style="flex:1" onchange="updateFieldProperty(${sectionIndex}, ${fieldIndex}, 'placeholder', this.value)">
+        <label><input type="checkbox" ${field.multiple ? 'checked' : ''} onchange="updateFieldProperty(${sectionIndex}, ${fieldIndex}, 'multiple', this.checked)"> Multiple (select/checkbox)</label>
+        <input type="text" class="input" placeholder="Placeholder text" value="${field.placeholder || ''}" style="flex:1;min-width:200px" onchange="updateFieldProperty(${sectionIndex}, ${fieldIndex}, 'placeholder', this.value)">
       </div>
+      ${['select','radio','checkbox'].includes(field.type) ? `
+      <div style="margin-top:8px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Choices</div>
+        <div id="opts_${sectionIndex}_${fieldIndex}"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" class="input" id="newOpt_${sectionIndex}_${fieldIndex}" placeholder="Add choice label">
+          <button type="button" class="btn secondary" onclick="addOption(${sectionIndex}, ${fieldIndex})"><i class="bi bi-plus"></i> Add</button>
+        </div>
+      </div>
+      ` : ''}
     </div>
   `;
 }
@@ -528,10 +540,25 @@ function renderField(field, sectionIndex, fieldIndex) {
 function updateFieldProperty(sectionIndex, fieldIndex, property, value) {
   formStructure.sections[sectionIndex].fields[fieldIndex][property] = value;
   updateFormStructure();
+  if (['options','label','type','multiple'].includes(property)) {
+    renderFormFields();
+  }
 }
 
 function removeField(sectionIndex, fieldIndex) {
   formStructure.sections[sectionIndex].fields.splice(fieldIndex, 1);
+  renderFormFields();
+}
+
+function addOption(sectionIndex, fieldIndex) {
+  const input = document.getElementById(`newOpt_${sectionIndex}_${fieldIndex}`);
+  const val = (input?.value || '').trim();
+  if (!val) return;
+  const field = formStructure.sections[sectionIndex].fields[fieldIndex];
+  if (!Array.isArray(field.options)) field.options = [];
+  field.options.push(val);
+  input.value = '';
+  updateFormStructure();
   renderFormFields();
 }
 
@@ -554,14 +581,48 @@ function editTemplate(templateData) {
 }
 
 function previewTemplate(templateId) {
-  // In a real implementation, this would fetch the template and render a preview
-  document.getElementById('previewContent').innerHTML = `
-    <div style="text-align:center;padding:40px;color:var(--muted)">
-      <div style="font-size:24px;margin-bottom:8px">👁️</div>
-      <div>Form preview would be displayed here.</div>
-      <div style="font-size:12px;margin-top:8px">Template ID: ${templateId}</div>
-    </div>
-  `;
+  try {
+    const tpl = (window.__templates || []).find(t => t.id == templateId);
+    if (!tpl) {
+      document.getElementById('previewContent').innerHTML = '<div class="muted" style="padding:24px;text-align:center">Template not loaded in client. Please use Edit first.</div>';
+      document.getElementById('previewModal').style.display = 'block';
+      return;
+    }
+    const structure = JSON.parse(tpl.form_structure || '{"sections":[]}');
+    let html = '<div style="padding:8px 0">';
+    html += `<h4 style="margin:0 0 12px 0">${tpl.name || 'Form'}</h4>`;
+    structure.sections.forEach((section, sIdx) => {
+      html += `<div style=\"margin-bottom:16px\"><div style=\"font-weight:600;margin-bottom:8px\">${section.title || ('Section ' + (sIdx+1))}</div>`;
+      (section.fields||[]).forEach((f, i) => {
+        const id = `pv_${sIdx}_${i}`;
+        const label = `<label class=\"form-label\" for=\"${id}\">${f.label || ('Field ' + (i+1))}${f.required?' *':''}</label>`;
+        if (f.type==='text' || f.type==='email' || f.type==='phone' || f.type==='number' || f.type==='date') {
+          const type = f.type==='phone' ? 'tel' : (f.type==='text'?'text':f.type);
+          html += `<div style=\"margin-bottom:10px\">${label}<input id=\"${id}\" class=\"input\" type=\"${type}\" placeholder=\"${f.placeholder||''}\" ${f.required?'required':''}></div>`;
+        } else if (f.type==='textarea') {
+          html += `<div style=\"margin-bottom:10px\">${label}<textarea id=\"${id}\" class=\"input\" rows=\"3\" placeholder=\"${f.placeholder||''}\" ${f.required?'required':''}></textarea></div>`;
+        } else if (f.type==='file') {
+          html += `<div style=\"margin-bottom:10px\">${label}<input id=\"${id}\" class=\"input\" type=\"file\" ${f.required?'required':''}></div>`;
+        } else if (f.type==='select') {
+          const multiple = f.multiple ? ' multiple' : '';
+          const opts = (f.options||[]).map(o => `<option>${o}</option>`).join('');
+          html += `<div style=\"margin-bottom:10px\">${label}<select id=\"${id}\" class=\"input\"${multiple}>${opts||'<option>—</option>'}</select></div>`;
+        } else if (f.type==='checkbox') {
+          const opts = (f.options||['Option']).map((o, k) => `<label style=\"display:inline-flex;gap:6px;align-items:center;margin-right:10px\"><input type=\"checkbox\" name=\"${id}\"> ${o}</label>`).join('');
+          html += `<div style=\"margin-bottom:10px\">${label}<div>${opts}</div></div>`;
+        } else if (f.type==='radio') {
+          const opts = (f.options||['Option']).map((o, k) => `<label style=\"display:inline-flex;gap:6px;align-items:center;margin-right:10px\"><input type=\"radio\" name=\"${id}\"> ${o}</label>`).join('');
+          html += `<div style=\"margin-bottom:10px\">${label}<div>${opts}</div></div>`;
+        }
+      });
+      html += `</div>`;
+    });
+    html += `<div><button class=\"btn\" type=\"button\" disabled>Submit (preview)</button></div>`;
+    html += '</div>';
+    document.getElementById('previewContent').innerHTML = html;
+  } catch (e) {
+    document.getElementById('previewContent').innerHTML = '<div class="muted" style="padding:24px;text-align:center">Unable to render preview.</div>';
+  }
   document.getElementById('previewModal').style.display = 'block';
 }
 
@@ -574,4 +635,7 @@ document.addEventListener('click', function(e) {
   if (e.target.id === 'formBuilderModal') closeFormBuilder();
   if (e.target.id === 'previewModal') closePreview();
 });
+
+// Expose templates for preview on page (lightweight)
+try { window.__templates = <?php echo json_encode($templates, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE); ?>; } catch(e){}
 </script>

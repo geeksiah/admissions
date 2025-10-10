@@ -115,11 +115,14 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM programs $whereSql ORDER BY crea
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
               <button class="btn secondary" type="submit"><i class="bi bi-toggle2-<?php echo $r['status']==='active'?'on':'off'; ?>"></i> <?php echo $r['status']==='active'?'Deactivate':'Activate'; ?></button>
             </form>
-            <form method="post" action="?panel=programs" enctype="multipart/form-data" onsubmit="return confirm('Upload prospectus PDF?')">
+            <form method="post" action="?panel=programs" enctype="multipart/form-data" onsubmit="return confirm('Upload program prospectus (PDF) for students to download after approval?')">
               <input type="hidden" name="action" value="upload_prospectus">
               <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
-              <input class="input" type="file" name="prospectus" accept="application/pdf" style="max-width:220px">
+              <div style="display:flex;gap:8px;align-items:center">
+                <input class="input" type="file" name="prospectus" accept="application/pdf" style="max-width:220px">
+                <span class="muted" style="font-size:12px">Upload the official program prospectus (PDF). Students with approved applications will see a secure download link.</span>
+              </div>
               <button class="btn secondary" type="submit"><i class="bi bi-file-earmark-pdf"></i> Upload PDF</button>
             </form>
             <?php if (!empty($r['prospectus_path'])): ?>
