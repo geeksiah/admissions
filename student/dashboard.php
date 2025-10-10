@@ -20,9 +20,15 @@ if ($error==='') {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(150) NOT NULL,
       status VARCHAR(30) DEFAULT 'active',
+      prospectus_path VARCHAR(255) NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_status(status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Add prospectus_path to legacy programs table if missing
+    try {
+      $col = $pdo->query("SHOW COLUMNS FROM programs LIKE 'prospectus_path'")->fetch();
+      if (!$col) { $pdo->exec("ALTER TABLE programs ADD COLUMN prospectus_path VARCHAR(255) NULL"); }
+    } catch (Throwable $e) { /* ignore */ }
     $pdo->exec("CREATE TABLE IF NOT EXISTS applications (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       student_id INT UNSIGNED NOT NULL,
@@ -41,6 +47,11 @@ if ($error==='') {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_student(student_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Ensure notifications has student_id for student portal
+    try {
+      $ncol = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'student_id'")->fetch();
+      if (!$ncol) { $pdo->exec("ALTER TABLE notifications ADD COLUMN student_id INT UNSIGNED NULL"); }
+    } catch (Throwable $e) { /* ignore */ }
   } catch (Throwable $e) { $error = $e->getMessage(); }
 }
 
@@ -125,6 +136,26 @@ if ($error==='' && $_SERVER['REQUEST_METHOD']==='POST') {
       $stmt->execute([$studentId, $appId ?: null, $docType, $rel]);
       $message = 'Document uploaded.';
       $currentPanel = 'documents';
+    } elseif ($action==='delete_document') {
+      $docId = (int)($_POST['id'] ?? 0);
+      if (!$docId) throw new RuntimeException('Invalid document');
+      $st = $pdo->prepare('SELECT file_path FROM student_documents WHERE id=? AND student_id=?');
+      $st->execute([$docId, $studentId]);
+      $row = $st->fetch(PDO::FETCH_ASSOC);
+      if (!$row) throw new RuntimeException('Document not found');
+      $abs = $_SERVER['DOCUMENT_ROOT'] . ($row['file_path'] ?? '');
+      $pdo->prepare('DELETE FROM student_documents WHERE id=? AND student_id=?')->execute([$docId, $studentId]);
+      if ($abs && is_file($abs) && strpos($abs, $_SERVER['DOCUMENT_ROOT'].'/uploads/documents/'.$studentId) === 0) { @unlink($abs); }
+      $message = 'Document deleted.';
+      $currentPanel = 'documents';
+    } elseif ($action==='change_password') {
+      $new = $_POST['new_password'] ?? '';
+      $confirm = $_POST['confirm_password'] ?? '';
+      if (strlen($new) < 8 || $new !== $confirm) { throw new RuntimeException('Password mismatch or too short'); }
+      $hash = password_hash($new, PASSWORD_DEFAULT);
+      $pdo->prepare('UPDATE users SET password=? WHERE id=? AND role="student"')->execute([$hash, $studentId]);
+      $message = 'Password updated.';
+      $currentPanel = 'profile';
     }
   } catch (Throwable $e) { $error = $e->getMessage(); }
 }
@@ -159,18 +190,44 @@ if ($error==='') {
 $hideTopActions = true;
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="dashboard-content" style="margin-left:0; padding:24px; height:calc(100vh - 60px); overflow:auto;">
-  <div class="panel-card">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      <a class="btn secondary" href="?panel=applications" style="<?php echo $currentPanel==='applications'?'background:var(--surface-hover)':''; ?>">Applications</a>
-      <a class="btn secondary" href="?panel=documents" style="<?php echo $currentPanel==='documents'?'background:var(--surface-hover)':''; ?>">Documents</a>
-      <a class="btn secondary" href="?panel=payments" style="<?php echo $currentPanel==='payments'?'background:var(--surface-hover)':''; ?>">Payments</a>
-      <a class="btn secondary" href="?panel=notifications" style="<?php echo $currentPanel==='notifications'?'background:var(--surface-hover)':''; ?>">Notifications</a>
-      <a class="btn secondary" href="?panel=profile" style="<?php echo $currentPanel==='profile'?'background:var(--surface-hover)':''; ?>">Profile</a>
-    </div>
-  </div>
+// Branding and layout similar to admin
+$brandColor = $systemSettings['brand_color'] ?? '#2563eb';
+$logoPath = $systemSettings['logo_path'] ?? '/uploads/logos/logo.png';
+$hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
+?>
+<link rel="stylesheet" href="/assets/css/dashboard.css">
+<style>
+  :root { --brand: <?php echo htmlspecialchars($brandColor); ?>; }
+  body { overflow:hidden; }
+  .dashboard-content { height: calc(100vh - 60px); overflow:auto; }
+  .dashboard-sidebar { top:0; height:100vh; }
+</style>
 
-  <?php if ($currentPanel==='applications'): ?>
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar" id="sidebarNav">
+    <a href="/student/dashboard" class="sidebar-logo" aria-label="Home">
+      <?php if ($hasLogo): ?>
+        <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="Logo" class="sidebar-logo-img">
+      <?php else: ?>
+        <div class="sidebar-logo-placeholder"></div>
+      <?php endif; ?>
+    </a>
+    <div class="sidebar-title">Student</div>
+    <a href="?panel=applications" class="sidebar-item <?php echo $currentPanel==='applications'?'active':''; ?>" data-panel="applications"><i class="bi bi-list-check"></i> Applications</a>
+    <a href="?panel=documents" class="sidebar-item <?php echo $currentPanel==='documents'?'active':''; ?>" data-panel="documents"><i class="bi bi-folder2"></i> Documents</a>
+    <a href="?panel=payments" class="sidebar-item <?php echo $currentPanel==='payments'?'active':''; ?>" data-panel="payments"><i class="bi bi-credit-card"></i> Payments</a>
+    <a href="?panel=notifications" class="sidebar-item <?php echo $currentPanel==='notifications'?'active':''; ?>" data-panel="notifications"><i class="bi bi-bell"></i> Notifications</a>
+    <a href="?panel=profile" class="sidebar-item <?php echo $currentPanel==='profile'?'active':''; ?>" data-panel="profile"><i class="bi bi-person"></i> Profile</a>
+  </aside>
+
+  <main class="dashboard-content" id="panelHost">
+    <div class="toolbar">
+      <button class="btn secondary mobile-only" id="toggleSidebar"><i class="bi bi-list"></i></button>
+      <div class="muted">Student Dashboard</div>
+      <div></div>
+    </div>
+
+    <div id="panel-applications" class="<?php echo $currentPanel==='applications'?'':'hidden'; ?>" style="<?php echo $currentPanel==='applications'?'display:block':''; ?>">
   <div class="panel-card">
     <h3>My Applications</h3>
     <?php if ($error): ?><div class="card" style="border-left:4px solid #ef4444;margin-bottom:12px"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
@@ -259,9 +316,9 @@ include __DIR__ . '/../includes/header.php';
     </form>
     <?php endif; ?>
   </div>
-  <?php endif; ?>
+    </div>
 
-  <?php if ($currentPanel==='documents'): ?>
+    <div id="panel-documents" class="<?php echo $currentPanel==='documents'?'':'hidden'; ?>" style="<?php echo $currentPanel==='documents'?'display:block':''; ?>">
   <div class="panel-card">
     <h3>My Documents</h3>
     <div class="card" style="overflow:auto">
@@ -300,9 +357,9 @@ include __DIR__ . '/../includes/header.php';
       <button class="btn" type="submit"><i class="bi bi-upload"></i> Upload</button>
     </form>
   </div>
-  <?php endif; ?>
+    </div>
 
-  <?php if ($currentPanel==='payments'): ?>
+    <div id="panel-payments" class="<?php echo $currentPanel==='payments'?'':'hidden'; ?>" style="<?php echo $currentPanel==='payments'?'display:block':''; ?>">
   <div class="panel-card">
     <h3>Payments</h3>
     <div class="card" style="overflow:auto">
@@ -326,9 +383,9 @@ include __DIR__ . '/../includes/header.php';
       </table>
     </div>
   </div>
-  <?php endif; ?>
+    </div>
 
-  <?php if ($currentPanel==='notifications'): ?>
+    <div id="panel-notifications" class="<?php echo $currentPanel==='notifications'?'':'hidden'; ?>" style="<?php echo $currentPanel==='notifications'?'display:block':''; ?>">
   <div class="panel-card">
     <h3>Notifications</h3>
     <div class="card" style="overflow:auto">
@@ -343,15 +400,59 @@ include __DIR__ . '/../includes/header.php';
       <?php endforeach; endif; ?>
     </div>
   </div>
-  <?php endif; ?>
+    </div>
 
-  <?php if ($currentPanel==='profile'): ?>
+    <div id="panel-profile" class="<?php echo $currentPanel==='profile'?'':'hidden'; ?>" style="<?php echo $currentPanel==='profile'?'display:block':''; ?>">
   <div class="panel-card">
     <h3>Profile</h3>
-    <p class="muted">Coming soon.</p>
+    <form method="post" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+      <input type="hidden" name="action" value="change_password">
+      <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+      <div>
+        <label class="form-label">New Password</label>
+        <input class="input" type="password" name="new_password" minlength="8" required>
+      </div>
+      <div>
+        <label class="form-label">Confirm Password</label>
+        <input class="input" type="password" name="confirm_password" minlength="8" required>
+      </div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" type="submit"><i class="bi bi-key"></i> Update Password</button></div>
+    </form>
   </div>
-  <?php endif; ?>
+    </div>
+  </main>
 </div>
+
+<script>
+(function(){
+  const sidebar = document.getElementById('sidebarNav');
+  const panelHost = document.getElementById('panelHost');
+  const navItems = document.querySelectorAll('#sidebarNav .sidebar-item');
+  function showPanel(panel){
+    const panels = panelHost.querySelectorAll('[id^="panel-"]');
+    panels.forEach(p=>{ p.classList.add('hidden'); p.style.display='none'; });
+    const target = document.getElementById('panel-'+panel);
+    if (target){ target.classList.remove('hidden'); target.style.display='block'; }
+    navItems.forEach(a=>a.classList.toggle('active', a.dataset.panel===panel));
+    try { const url=new URL(window.location.href); url.searchParams.set('panel', panel); url.hash=''; history.replaceState({},'',url.toString()); } catch(e){}
+  }
+  if (sidebar){
+    sidebar.addEventListener('click', function(e){
+      const link = e.target.closest('.sidebar-item');
+      if (!link) return;
+      e.preventDefault();
+      showPanel(link.dataset.panel);
+      if (window.innerWidth <= 1024 && sidebar.classList.contains('show')) sidebar.classList.remove('show');
+    });
+  }
+  const toggleButtons = document.querySelectorAll('#toggleSidebar, #sidebarToggleTop');
+  toggleButtons.forEach(b=> b && b.addEventListener('click', function(e){ e.stopPropagation(); sidebar.classList.toggle('show'); }));
+  document.addEventListener('click', function(e){ if (window.innerWidth<=1024 && sidebar.classList.contains('show') && !sidebar.contains(e.target)) sidebar.classList.remove('show'); });
+  document.addEventListener('keydown', function(e){ if (e.key==='Escape' && sidebar.classList.contains('show')) sidebar.classList.remove('show'); });
+})();
+</script>
+
+<?php include __DIR__ . '/../includes/footer.php'; ?>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 
 
