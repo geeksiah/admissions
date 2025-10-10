@@ -188,12 +188,11 @@ if ($error==='') {
 }
 
 $hideTopActions = true;
-include __DIR__ . '/../includes/header.php';
-?>
 // Branding and layout similar to admin
 $brandColor = $systemSettings['brand_color'] ?? '#2563eb';
 $logoPath = $systemSettings['logo_path'] ?? '/uploads/logos/logo.png';
 $hasLogo = file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath);
+include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="/assets/css/dashboard.css">
 <style>
