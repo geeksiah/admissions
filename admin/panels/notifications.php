@@ -226,7 +226,7 @@ $stats = [
 ?>
 
 <?php if($msg): ?>
-<div class="card" style="border-left:4px solid <?php echo $type==='success'?'#10b981':'#ef4444'; ?>;margin-bottom:12px;"><?php echo htmlspecialchars($msg); ?></div>
+<script>document.addEventListener('DOMContentLoaded',function(){ clearToasts(); toast({ message: <?php echo json_encode($msg); ?>, variant: '<?php echo $type==='success'?'success':'error'; ?>' }); });</script>
 <?php endif; ?>
 
 <!-- Notification Stats -->
@@ -324,7 +324,8 @@ $stats = [
     
     <div>
       <label class="form-label">Variables (JSON)</label>
-      <textarea class="input" name="variables" rows="3" placeholder='{"student_name": "John Doe", "amount": "500.00"}'></textarea>
+      <textarea class="input" name="variables" id="templateVars" rows="3" placeholder='{"student_name": "John Doe", "amount": "500.00"}'></textarea>
+      <div class="muted" id="varsHint" style="font-size:12px;margin-top:4px"></div>
     </div>
     
     <div style="display:flex;align-items:flex-end">
@@ -372,8 +373,15 @@ $stats = [
 
 <!-- Message Templates -->
 <div class="panel-card">
-  <h3>Message Templates</h3>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h3>Message Templates</h3>
+    <form method="post" action="?panel=notifications">
+      <input type="hidden" name="action" value="dedupe_templates">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+      <button class="btn secondary" type="submit"><i class="bi bi-magic"></i> Deduplicate</button>
+    </form>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
     <?php foreach($templates as $template): ?>
       <div style="border:1px solid var(--border);border-radius:8px;padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
@@ -398,9 +406,36 @@ $stats = [
           <div style="font-size:14px;max-height:100px;overflow:hidden"><?php echo htmlspecialchars(substr($template['body'], 0, 200)); ?><?php echo strlen($template['body']) > 200 ? '...' : ''; ?></div>
         </div>
         
-        <div style="font-size:12px;color:var(--muted)">
-          Created: <?php echo date('M j, Y', strtotime($template['created_at'])); ?>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <form method="post" action="?panel=notifications" style="display:inline">
+            <input type="hidden" name="action" value="toggle_template">
+            <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
+            <input type="hidden" name="is_active" value="<?php echo $template['is_active']?0:1; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+            <button class="btn secondary" type="submit"><i class="bi bi-toggle2-<?php echo $template['is_active']?'on':'off'; ?>"></i> <?php echo $template['is_active']?'Deactivate':'Activate'; ?></button>
+          </form>
+          <button class="btn secondary" type="button" onclick="editTemplate(<?php echo (int)$template['id']; ?>)"><i class="bi bi-pencil"></i> Edit</button>
+          <form method="post" action="?panel=notifications" style="display:inline" onsubmit="return confirm('Delete this template?')">
+            <input type="hidden" name="action" value="delete_template">
+            <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+            <button class="btn secondary" type="submit" style="color:#ef4444"><i class="bi bi-trash"></i> Delete</button>
+          </form>
         </div>
+
+        <form id="templateEditForm-<?php echo (int)$template['id']; ?>" method="post" action="?panel=notifications" style="display:none;margin-top:12px;gap:12px">
+          <input type="hidden" name="action" value="update_template">
+          <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div><label class="form-label">Name</label><input class="input" name="template_name" value="<?php echo htmlspecialchars($template['name']); ?>" required></div>
+            <div><label class="form-label">Type</label><select class="input" name="template_type"><option value="email" <?php echo $template['type']==='email'?'selected':''; ?>>Email</option><option value="sms" <?php echo $template['type']==='sms'?'selected':''; ?>>SMS</option><option value="push" <?php echo $template['type']==='push'?'selected':''; ?>>Push</option></select></div>
+            <div style="grid-column:1/-1"><label class="form-label">Subject</label><input class="input" name="template_subject" value="<?php echo htmlspecialchars($template['subject']); ?>"></div>
+            <div style="grid-column:1/-1"><label class="form-label">Body</label><textarea class="input" name="template_body" rows="4" required><?php echo htmlspecialchars($template['body']); ?></textarea></div>
+            <div><label class="form-label">Active</label><select class="input" name="is_active"><option value="1" <?php echo $template['is_active']?'selected':''; ?>>Yes</option><option value="0" <?php echo !$template['is_active']?'selected':''; ?>>No</option></select></div>
+          </div>
+          <div style="margin-top:8px"><button class="btn" type="submit"><i class="bi bi-save"></i> Save</button></div>
+        </form>
       </div>
     <?php endforeach; ?>
   </div>
@@ -486,4 +521,13 @@ setInterval(() => {
   // In a real implementation, this would fetch new notifications via AJAX
   console.log('Checking for new notifications...');
 }, 30000);
+
+// Validate variable JSON with live hint
+document.addEventListener('input', function(e){
+  if (e.target && e.target.id === 'templateVars') {
+    var hint = document.getElementById('varsHint');
+    try { JSON.parse(e.target.value || '{}'); hint.textContent = 'Variables OK'; hint.style.color = '#10b981'; }
+    catch(err){ hint.textContent = 'Invalid JSON'; hint.style.color = '#ef4444'; }
+  }
+});
 </script>
