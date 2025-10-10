@@ -68,7 +68,7 @@ try {
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD']==='POST') {
-  $action = $_POST['action'] ?? '';
+  $action = $_POST['action'] ?? ($_GET['action'] ?? '');
   try {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { 
       throw new RuntimeException('Invalid request'); 
@@ -99,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     } elseif ($action==='send_email') {
       $templateId = (int)($_POST['template_id'] ?? 0);
       $recipientEmail = trim($_POST['recipient_email'] ?? '');
-      $variables = $_POST['variables'] ?? [];
+      $varsRaw = $_POST['variables'] ?? '[]';
+      $variables = is_array($varsRaw) ? $varsRaw : (json_decode($varsRaw, true) ?: []);
       
       if (!$templateId || !$recipientEmail) {
         throw new RuntimeException('Template and recipient email are required');
@@ -132,7 +133,8 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     } elseif ($action==='send_sms') {
       $templateId = (int)($_POST['template_id'] ?? 0);
       $recipientPhone = trim($_POST['recipient_phone'] ?? '');
-      $variables = $_POST['variables'] ?? [];
+      $varsRaw = $_POST['variables'] ?? '[]';
+      $variables = is_array($varsRaw) ? $varsRaw : (json_decode($varsRaw, true) ?: []);
       
       if (!$templateId || !$recipientPhone) {
         throw new RuntimeException('Template and recipient phone are required');
@@ -173,6 +175,45 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       $stmt->execute([$name, $type, $subject, $body]);
       
       $msg='Template saved successfully'; $type='success';
+    } elseif ($action==='update_template') {
+      $id = (int)($_POST['id'] ?? 0);
+      $name = trim($_POST['template_name'] ?? '');
+      $templateType = $_POST['template_type'] ?? 'email';
+      $subject = trim($_POST['template_subject'] ?? '');
+      $body = trim($_POST['template_body'] ?? '');
+      $isActive = isset($_POST['is_active']) ? (int)$_POST['is_active'] : null;
+      if (!$id || !$name || !$body) { throw new RuntimeException('Template ID, name and body are required'); }
+      $sql = "UPDATE notification_templates SET name=?, type=?, subject=?, body=?" . ($isActive!==null?", is_active=?":"") . " WHERE id=?";
+      $params = [$name, $templateType, $subject, $body];
+      if ($isActive!==null) { $params[] = $isActive; }
+      $params[] = $id;
+      $stmt = $pdo->prepare($sql);
+      $stmt->execute($params);
+      $msg='Template updated successfully'; $type='success';
+    } elseif ($action==='toggle_template') {
+      $id = (int)($_POST['id'] ?? 0);
+      $isActive = (int)($_POST['is_active'] ?? 0);
+      if (!$id) { throw new RuntimeException('Template ID required'); }
+      $stmt = $pdo->prepare("UPDATE notification_templates SET is_active=? WHERE id=?");
+      $stmt->execute([$isActive, $id]);
+      $msg='Template status updated'; $type='success';
+    } elseif ($action==='delete_template') {
+      $id = (int)($_POST['id'] ?? 0);
+      if (!$id) { throw new RuntimeException('Template ID required'); }
+      $stmt = $pdo->prepare("DELETE FROM notification_templates WHERE id=?");
+      $stmt->execute([$id]);
+      $msg='Template deleted'; $type='success';
+    } elseif ($action==='dedupe_templates') {
+      // Keep the most recent (highest id) per (name,type), delete others
+      $dups = $pdo->query("SELECT name, type, MAX(id) AS keep_id, COUNT(*) AS cnt FROM notification_templates GROUP BY name, type HAVING cnt>1")->fetchAll(PDO::FETCH_ASSOC);
+      $removed = 0;
+      foreach ($dups as $d) {
+        $del = $pdo->prepare("DELETE FROM notification_templates WHERE name=? AND type=? AND id<>?");
+        $del->execute([$d['name'], $d['type'], $d['keep_id']]);
+        $removed += $del->rowCount();
+      }
+      $msg = $removed ? ("Deduplicated templates. Removed ".$removed." duplicates.") : 'No duplicates found';
+      $type='success';
     }
   } catch (Throwable $e) { 
     $msg='Failed: '.$e->getMessage(); 
@@ -415,7 +456,7 @@ $stats = [
             <button class="btn secondary" type="submit"><i class="bi bi-toggle2-<?php echo $template['is_active']?'on':'off'; ?>"></i> <?php echo $template['is_active']?'Deactivate':'Activate'; ?></button>
           </form>
           <button class="btn secondary" type="button" onclick="editTemplate(<?php echo (int)$template['id']; ?>)"><i class="bi bi-pencil"></i> Edit</button>
-          <form method="post" action="?panel=notifications" style="display:inline" onsubmit="return confirm('Delete this template?')">
+          <form method="post" action="?panel=notifications" style="display:inline" data-confirm="Delete this template?">
             <input type="hidden" name="action" value="delete_template">
             <input type="hidden" name="id" value="<?php echo (int)$template['id']; ?>">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
