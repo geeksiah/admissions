@@ -249,6 +249,7 @@ try {
   </div>
 
   <form method="post" enctype="multipart/form-data" id="settingsForm">
+    <input type="hidden" name="panel" value="settings">
     <input type="hidden" name="csrf" value="<?php echo function_exists('generateCSRFToken') ? generateCSRFToken() : ''; ?>">
     <div id="tab-branding" class="tab-pane active">
       <div class="grid cols-2">

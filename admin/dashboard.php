@@ -68,9 +68,24 @@ try {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      user_id INT UNSIGNED, title VARCHAR(150), body TEXT, is_read TINYINT(1) DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      user_id INT UNSIGNED NULL,
+      student_id INT UNSIGNED NULL,
+      type ENUM('email','sms','push','system') DEFAULT 'system',
+      title VARCHAR(200) NOT NULL,
+      message TEXT NOT NULL,
+      is_read TINYINT(1) DEFAULT 0,
+      sent_at TIMESTAMP NULL,
+      read_at TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user(user_id),
+      INDEX idx_student(student_id),
+      INDEX idx_read(is_read)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  try { $pdo->exec("ALTER TABLE notifications ADD COLUMN student_id INT UNSIGNED NULL AFTER user_id"); } catch (Throwable $e) { }
+  try { $pdo->exec("ALTER TABLE notifications ADD COLUMN type ENUM('email','sms','push','system') DEFAULT 'system' AFTER student_id"); } catch (Throwable $e) { }
+  try { $pdo->exec("ALTER TABLE notifications ADD COLUMN message TEXT AFTER title"); } catch (Throwable $e) { }
+  try { $pdo->exec("ALTER TABLE notifications ADD COLUMN sent_at TIMESTAMP NULL AFTER is_read"); } catch (Throwable $e) { }
+  try { $pdo->exec("ALTER TABLE notifications ADD COLUMN read_at TIMESTAMP NULL AFTER sent_at"); } catch (Throwable $e) { }
   $pdo->exec("CREATE TABLE IF NOT EXISTS messages (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       sender_id INT UNSIGNED, recipient_id INT UNSIGNED, subject VARCHAR(150), body TEXT,

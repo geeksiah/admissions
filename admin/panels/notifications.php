@@ -52,7 +52,7 @@ try {
     INDEX idx_scheduled(scheduled_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   
-  // Insert default templates
+  // Insert default templates (only if table is empty)
   $templates = [
     ['Application Received', 'email', 'Application Received - {{institution_name}}', 'Dear {{student_name}},\n\nThank you for submitting your application to {{institution_name}}. Your application has been received and is currently under review.\n\nApplication Number: {{application_number}}\nProgram: {{program_name}}\n\nWe will notify you of any updates via email.\n\nBest regards,\nAdmissions Team', '["student_name", "institution_name", "application_number", "program_name"]'],
     ['Payment Confirmed', 'email', 'Payment Confirmed - {{institution_name}}', 'Dear {{student_name}},\n\nYour payment has been successfully confirmed.\n\nReceipt Number: {{receipt_number}}\nAmount: {{amount}}\nPayment Method: {{payment_method}}\n\nThank you for your payment.\n\nBest regards,\nFinance Team', '["student_name", "receipt_number", "amount", "payment_method"]'],
@@ -60,12 +60,25 @@ try {
     ['Document Reminder', 'sms', null, 'Hi {{student_name}}, please upload missing documents for your application {{application_number}}. Visit your portal to complete. - {{institution_name}}', '["student_name", "application_number"]'],
     ['Payment Reminder', 'sms', null, 'Hi {{student_name}}, payment for application {{application_number}} is due. Amount: {{amount}}. Pay now to avoid delays. - {{institution_name}}', '["student_name", "application_number", "amount"]']
   ];
-  
-  foreach ($templates as [$name, $type, $subject, $body, $variables]) {
-    $stmt = $pdo->prepare("INSERT IGNORE INTO notification_templates (name, type, subject, body, variables) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $type, $subject, $body, $variables]);
-  }
+  try {
+    $cnt = (int)$pdo->query("SELECT COUNT(*) FROM notification_templates")->fetchColumn();
+    if ($cnt === 0) {
+      foreach ($templates as [$name, $type, $subject, $body, $variables]) {
+        $stmt = $pdo->prepare("INSERT INTO notification_templates (name, type, subject, body, variables) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $type, $subject, $body, $variables]);
+      }
+    }
+  } catch (Throwable $e) { /* ignore */ }
 } catch (Throwable $e) { /* ignore */ }
+
+// Ensure unique (name,type) even if table existed before
+try { $pdo->exec("ALTER TABLE notification_templates ADD UNIQUE KEY uniq_name_type (name, type)"); } catch (Throwable $e) {
+  // If duplicates exist, remove older ones and try again
+  try {
+    $pdo->exec("DELETE t1 FROM notification_templates t1 INNER JOIN notification_templates t2 ON t1.name=t2.name AND t1.type=t2.type AND t1.id < t2.id");
+    $pdo->exec("ALTER TABLE notification_templates ADD UNIQUE KEY uniq_name_type (name, type)");
+  } catch (Throwable $e2) { /* ignore */ }
+}
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD']==='POST') {
