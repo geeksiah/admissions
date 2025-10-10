@@ -52,6 +52,14 @@ if ($error==='') {
       $ncol = $pdo->query("SHOW COLUMNS FROM notifications LIKE 'student_id'")->fetch();
       if (!$ncol) { $pdo->exec("ALTER TABLE notifications ADD COLUMN student_id INT UNSIGNED NULL"); }
     } catch (Throwable $e) { /* ignore */ }
+    // Ensure payments has student_id for student portal payments listing
+    try {
+      $pcol = $pdo->query("SHOW COLUMNS FROM payments LIKE 'student_id'")->fetch();
+      if (!$pcol) {
+        $pdo->exec("ALTER TABLE payments ADD COLUMN student_id INT UNSIGNED NULL AFTER application_id");
+        $pdo->exec("CREATE INDEX idx_student ON payments (student_id)");
+      }
+    } catch (Throwable $e) { /* ignore */ }
   } catch (Throwable $e) { $error = $e->getMessage(); }
 }
 
