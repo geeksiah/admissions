@@ -14,6 +14,14 @@ try {
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_program(program_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  // Ensure uniqueness by (name, program_id)
+  try { $pdo->exec("ALTER TABLE form_templates ADD UNIQUE KEY uniq_name_program (name, program_id)"); } catch (Throwable $e) {
+    try {
+      // Remove older duplicates, keep highest id per (name, program_id)
+      $pdo->exec("DELETE t1 FROM form_templates t1 INNER JOIN form_templates t2 ON t1.name=t2.name AND COALESCE(t1.program_id,0)=COALESCE(t2.program_id,0) AND t1.id < t2.id");
+      $pdo->exec("ALTER TABLE form_templates ADD UNIQUE KEY uniq_name_program (name, program_id)");
+    } catch (Throwable $e2) { /* ignore */ }
+  }
   
   $pdo->exec("CREATE TABLE IF NOT EXISTS form_fields (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +39,7 @@ try {
     INDEX idx_template(template_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   
-  // Insert default form template
+  // Insert default form template only once when table is empty
   $defaultTemplate = [
     'name' => 'Default Application Form',
     'description' => 'Standard application form for all programs',
@@ -63,8 +71,13 @@ try {
     ])
   ];
   
-  $stmt = $pdo->prepare("INSERT IGNORE INTO form_templates (name, description, program_id, form_structure) VALUES (?, ?, ?, ?)");
-  $stmt->execute([$defaultTemplate['name'], $defaultTemplate['description'], $defaultTemplate['program_id'], $defaultTemplate['form_structure']]);
+  try {
+    $cnt = (int)$pdo->query("SELECT COUNT(*) FROM form_templates")->fetchColumn();
+    if ($cnt === 0) {
+      $stmt = $pdo->prepare("INSERT INTO form_templates (name, description, program_id, form_structure) VALUES (?, ?, ?, ?)");
+      $stmt->execute([$defaultTemplate['name'], $defaultTemplate['description'], $defaultTemplate['program_id'], $defaultTemplate['form_structure']]);
+    }
+  } catch (Throwable $e) { /* ignore */ }
 } catch (Throwable $e) { /* ignore */ }
 
 // Handle actions
@@ -137,6 +150,24 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       $stmt->execute([$id]);
       
       $msg='Template deleted successfully'; $type='success';
+    } elseif ($action==='duplicate_template') {
+      $id = (int)($_POST['template_id'] ?? 0);
+      if (!$id) throw new RuntimeException('Template ID required');
+      $st = $pdo->prepare("SELECT * FROM form_templates WHERE id=?");
+      $st->execute([$id]);
+      $tpl = $st->fetch(PDO::FETCH_ASSOC);
+      if (!$tpl) throw new RuntimeException('Template not found');
+      $base = ($tpl['name'] ?? 'Form') . ' (Copy)';
+      $name = $base; $i = 2;
+      while (true) {
+        $chk = $pdo->prepare("SELECT COUNT(*) FROM form_templates WHERE name=? AND COALESCE(program_id,0)=COALESCE(?,0)");
+        $chk->execute([$name, $tpl['program_id']]);
+        if ((int)$chk->fetchColumn() === 0) break;
+        $name = $base . ' ' . $i++;
+      }
+      $ins = $pdo->prepare("INSERT INTO form_templates (name, description, program_id, form_structure, is_active) VALUES (?,?,?,?,1)");
+      $ins->execute([$name, $tpl['description'], $tpl['program_id'], $tpl['form_structure']]);
+      $msg='Form duplicated. You can now edit it.'; $type='success';
     }
   } catch (Throwable $e) { 
     $msg='Failed: '.$e->getMessage(); 
@@ -235,6 +266,12 @@ $fieldTypes = [
             <button class="btn secondary" onclick="previewTemplate(<?php echo (int)$template['id']; ?>)">
               <i class="bi bi-eye"></i> Preview
             </button>
+            <form method="post" action="?panel=application_forms" style="display:inline">
+              <input type="hidden" name="action" value="duplicate_template">
+              <input type="hidden" name="template_id" value="<?php echo (int)$template['id']; ?>">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+              <button class="btn secondary" type="submit"><i class="bi bi-files"></i> Duplicate</button>
+            </form>
             <form method="post" action="?panel=application_forms" style="display:inline" onsubmit="return confirm('Toggle template status?')">
               <input type="hidden" name="action" value="toggle_template">
               <input type="hidden" name="template_id" value="<?php echo (int)$template['id']; ?>">
@@ -244,7 +281,7 @@ $fieldTypes = [
                 <i class="bi bi-toggle2-<?php echo $template['is_active']?'on':'off'; ?>"></i>
               </button>
             </form>
-            <form method="post" action="?panel=application_forms" style="display:inline" onsubmit="return confirm('Delete this template? This cannot be undone.')">
+            <form method="post" action="?panel=application_forms" style="display:inline" data-confirm="Delete this template? This cannot be undone.">
               <input type="hidden" name="action" value="delete_template">
               <input type="hidden" name="template_id" value="<?php echo (int)$template['id']; ?>">
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
