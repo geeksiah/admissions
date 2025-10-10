@@ -54,7 +54,7 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM students $where ORDER BY created
 ?>
 
 <?php if($message): ?>
-  <div class="card" style="border-left:4px solid <?php echo $messageType==='success'?'#10b981':'#ef4444'; ?>;margin-bottom:12px;"><?php echo htmlspecialchars($message); ?></div>
+  <script>document.addEventListener('DOMContentLoaded',function(){ clearToasts(); toast({ message: <?php echo json_encode($message); ?>, variant: '<?php echo $messageType==='success'?'success':'error'; ?>' }); });</script>
 <?php endif; ?>
 
 <div class="panel-card">

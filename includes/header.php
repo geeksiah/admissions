@@ -86,3 +86,35 @@ require_once __DIR__ . '/../config/config.php';
     }
   });
 </script>
+
+<!-- Global Toast Area -->
+<div id="toastArea" class="toast-area"></div>
+<script>
+  // shadcn-style toast helpers
+  (function(){
+    function createToast(content, variant){
+      var area = document.getElementById('toastArea');
+      if (!area) { return; }
+      var t = document.createElement('div');
+      t.className = 'toast ' + (variant || 'info');
+      t.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'
+        + (variant==='success' ? '<i class="bi bi-check-circle" style="color:#10b981"></i>'
+           : variant==='error' ? '<i class="bi bi-x-circle" style="color:#ef4444"></i>'
+           : '<i class="bi bi-info-circle" style="color:#3b82f6"></i>')
+        + '<span>'+content+'</span></div>'
+        + '<button class="close" aria-label="Close">&times;</button>';
+      t.querySelector('.close').onclick = function(){ t.remove(); };
+      area.appendChild(t);
+      setTimeout(function(){ try{ t.remove(); }catch(e){} }, 3800);
+    }
+    window.toast = function(opts){
+      var msg = (typeof opts === 'string') ? opts : (opts.message || opts.title || '');
+      var variant = (typeof opts === 'object' && opts.variant) ? opts.variant : (opts.type || 'info');
+      if (!msg) return; createToast(msg, variant);
+    };
+    window.clearToasts = function(){
+      var area = document.getElementById('toastArea');
+      if (area) { area.innerHTML = ''; }
+    };
+  })();
+</script>

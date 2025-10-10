@@ -98,6 +98,9 @@ try {
 
 <div class="panel-card">
   <h3>Applications</h3>
+  <?php if(!empty($msg)): ?>
+    <script>document.addEventListener('DOMContentLoaded', function(){ clearToasts(); toast({ message: <?php echo json_encode($msg); ?>, variant: '<?php echo $type==='success'?'success':'error'; ?>' }); });</script>
+  <?php endif; ?>
   <form method="get" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <input type="hidden" name="panel" value="applications">
     <select name="status" class="input" style="max-width:160px">

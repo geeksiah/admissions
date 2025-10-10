@@ -71,7 +71,7 @@ $rows=[]; try{ $st=$pdo->prepare("SELECT * FROM programs $whereSql ORDER BY crea
 ?>
 
 <?php if($msg): ?>
-<div class="card" style="border-left:4px solid <?php echo $type==='success'?'#10b981':'#ef4444'; ?>;margin-bottom:12px;"><?php echo htmlspecialchars($msg); ?></div>
+<script>document.addEventListener('DOMContentLoaded',function(){ clearToasts(); toast({ message: <?php echo json_encode($msg); ?>, variant: '<?php echo $type==='success'?'success':'error'; ?>' }); });</script>
 <?php endif; ?>
 
 <div class="panel-card">

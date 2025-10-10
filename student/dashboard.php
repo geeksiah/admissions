@@ -238,7 +238,9 @@ include __DIR__ . '/../includes/header.php';
   <div class="panel-card">
     <h3>My Applications</h3>
     <?php if ($error): ?><div class="card" style="border-left:4px solid #ef4444;margin-bottom:12px"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
-    <?php if ($message): ?><div class="card" style="border-left:4px solid #10b981;margin-bottom:12px"><?php echo htmlspecialchars($message); ?></div><?php endif; ?>
+    <?php if ($message): ?>
+      <script>document.addEventListener('DOMContentLoaded', function(){ clearToasts(); toast({ message: <?php echo json_encode($message); ?>, variant: 'success' }); });</script>
+    <?php endif; ?>
 
     <div class="card" style="overflow:auto">
       <table style="width:100%;border-collapse:collapse">

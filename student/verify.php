@@ -21,6 +21,9 @@ try {
 
 include __DIR__ . '/../includes/header.php';
 ?>
+<?php if($msg): ?>
+<script>document.addEventListener('DOMContentLoaded',function(){ clearToasts(); toast({ message: <?php echo json_encode($msg); ?>, variant: '<?php echo $ok?'success':'error'; ?>' }); });</script>
+<?php endif; ?>
 <div class="auth-wrapper">
   <div class="auth-card">
     <h2 class="auth-title">Email Verification</h2>
