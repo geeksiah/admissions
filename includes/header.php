@@ -20,6 +20,7 @@ require_once __DIR__ . '/../config/config.php';
   <link rel="stylesheet" href="/assets/css/dashboard.css">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <script src="assets/js/table-utils.js"></script>
 </head>
 <body>
   <nav class="nav">
